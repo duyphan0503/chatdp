@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: chatdp
+      POSTGRES_PASSWORD: chatdp
+      POSTGRES_DB: chatdp
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:

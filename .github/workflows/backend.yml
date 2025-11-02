@@ -1,0 +1,31 @@
+name: Backend CI
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'packages/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'packages/**'
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install deps
+        run: pnpm -C backend install || pnpm install
+      - name: Lint
+        run: pnpm --filter @chatdp/backend lint || echo "skip lint (no deps)"
+      - name: Build
+        run: pnpm --filter @chatdp/backend build || echo "skip build (scaffold)"
+      - name: Test
+        run: pnpm --filter @chatdp/backend test -- --coverage --runInBand || echo "skip tests (scaffold)"

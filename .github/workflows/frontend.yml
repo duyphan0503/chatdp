@@ -1,0 +1,33 @@
+name: Frontend CI
+on:
+  push:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Flutter app presence
+        id: check
+        run: |
+          if [ -f frontend/pubspec.yaml ]; then echo "has=true" >> $GITHUB_OUTPUT; else echo "has=false" >> $GITHUB_OUTPUT; fi
+      - name: Setup Flutter
+        if: steps.check.outputs.has == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Flutter pub get
+        if: steps.check.outputs.has == 'true'
+        run: |
+          cd frontend
+          flutter pub get
+      - name: Test
+        if: steps.check.outputs.has == 'true'
+        run: |
+          cd frontend
+          flutter test

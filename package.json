@@ -1,0 +1,15 @@
+{
+  "name": "chatdp-monorepo",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:backend": "pnpm --filter @chatdp/backend dev",
+    "build:backend": "pnpm --filter @chatdp/backend build",
+    "lint:backend": "pnpm --filter @chatdp/backend lint",
+    "test:backend": "pnpm --filter @chatdp/backend test",
+    "ci": "echo Run CI locally via turbo or gh"
+  }
+}

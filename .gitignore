@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+.DS_Store
+.env
+.env.*
+.prisma/
+.idea/
+# Flutter
+**/build/
+.flutter-plugins
+.packages
+.pub-cache/
+.melos_tool/
