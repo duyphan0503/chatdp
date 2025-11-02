@@ -26,8 +26,8 @@ jobs:
       - name: Install deps
         run: pnpm -C apps/backend install || pnpm install
       - name: Lint
-        run: pnpm --filter @chatdp/backend lint || echo "skip lint (no deps)"
+        run: pnpm lint --filter=@chatdp/backend || echo "skip lint (no deps)"
       - name: Build
-        run: pnpm --filter @chatdp/backend build || echo "skip build (scaffold)"
+        run: pnpm build --filter=@chatdp/backend || echo "skip build (scaffold)"
       - name: Test
-        run: pnpm --filter @chatdp/backend test -- --coverage --runInBand || echo "skip tests (scaffold)"
+        run: pnpm test --filter=@chatdp/backend -- --coverage --runInBand || echo "skip tests (scaffold)"

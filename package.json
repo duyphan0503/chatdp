@@ -10,6 +10,12 @@
     "build:backend": "pnpm --filter @chatdp/backend build",
     "lint:backend": "pnpm --filter @chatdp/backend lint",
     "test:backend": "pnpm --filter @chatdp/backend test",
+    "lint": "turbo run lint",
+    "build": "turbo run build",
+    "test": "turbo run test",
     "ci": "echo Run CI locally via turbo or gh"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3"
   }
 }
