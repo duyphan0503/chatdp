@@ -2,12 +2,12 @@ name: Backend CI
 on:
   push:
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
       - 'packages/**'
       - '.github/workflows/backend.yml'
   pull_request:
     paths:
-      - 'backend/**'
+      - 'apps/backend/**'
       - 'packages/**'
 jobs:
   build-test:
@@ -22,7 +22,7 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - name: Install deps
-        run: pnpm -C backend install || pnpm install
+        run: pnpm -C apps/backend install || pnpm install
       - name: Lint
         run: pnpm --filter @chatdp/backend lint || echo "skip lint (no deps)"
       - name: Build

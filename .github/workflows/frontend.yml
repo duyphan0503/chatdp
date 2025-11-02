@@ -2,11 +2,11 @@ name: Frontend CI
 on:
   push:
     paths:
-      - 'frontend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/frontend.yml'
   pull_request:
     paths:
-      - 'frontend/**'
+      - 'apps/frontend/**'
 jobs:
   flutter:
     runs-on: ubuntu-latest
@@ -24,10 +24,10 @@ jobs:
       - name: Flutter pub get
         if: steps.check.outputs.has == 'true'
         run: |
-          cd frontend
+          cd apps/frontend
           flutter pub get
       - name: Test
         if: steps.check.outputs.has == 'true'
         run: |
-          cd frontend
+          cd apps/frontend
           flutter test
