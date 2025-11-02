@@ -2,7 +2,7 @@
   "name": "chatdp-monorepo",
   "private": true,
   "workspaces": [
-    "backend",
+    "apps/backend",
     "packages/*"
   ],
   "scripts": {

@@ -15,7 +15,7 @@ jobs:
       - name: Check Flutter app presence
         id: check
         run: |
-          if [ -f frontend/pubspec.yaml ]; then echo "has=true" >> $GITHUB_OUTPUT; else echo "has=false" >> $GITHUB_OUTPUT; fi
+          if [ -f apps/frontend/pubspec.yaml ]; then echo "has=true" >> $GITHUB_OUTPUT; else echo "has=false" >> $GITHUB_OUTPUT; fi
       - name: Setup Flutter
         if: steps.check.outputs.has == 'true'
         uses: subosito/flutter-action@v2
