@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -19,8 +20,8 @@ import { HealthController } from './health.controller';
           : 100,
       },
     ]),
-    // Phase 2: Prisma module (global) — temporarily disabled during Phase 1 to avoid prisma generate requirement in tests
-    // PrismaModule,
+    // Phase 2: Prisma module (global)
+    PrismaModule,
   ],
   controllers: [HealthController],
   providers: [
