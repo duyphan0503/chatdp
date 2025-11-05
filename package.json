@@ -16,6 +16,6 @@
     "ci": "echo Run CI locally via turbo or gh"
   },
   "devDependencies": {
-    "turbo": "^2.1.3"
+    "turbo": "^2.6.0"
   }
 }
