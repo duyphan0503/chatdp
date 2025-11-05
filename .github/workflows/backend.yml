@@ -25,6 +25,8 @@ jobs:
           cache: 'pnpm'
       - name: Install deps
         run: pnpm -C apps/backend install || pnpm install
+      - name: Prisma generate
+        run: pnpm prisma:generate --filter=@chatdp/backend || echo "skip prisma generate"
       - name: Lint
         run: pnpm lint --filter=@chatdp/backend || echo "skip lint (no deps)"
       - name: Build

@@ -223,3 +223,69 @@ Mục tiêu: Đánh bóng ứng dụng và thêm các tính năng giữ chân ng
 ### Giai đoạn 5: Mở rộng (Tương lai)
 * Cuộc gọi video nhóm.
 * Mã hóa đầu cuối (E2EE).
+
+---
+
+## Phụ lục: Phân rã Phase Backend chi tiết
+
+Phần này cụ thể hoá lộ trình ở trên thành các phase triển khai nhỏ, dễ quản lý PR và CI. Các phase tuần tự hoặc có thể song song một phần, tuỳ ưu tiên.
+
+1) Phase 1 — Security Baseline
+- ConfigModule.forRoot({ isGlobal: true })
+- ThrottlerModule.forRoot + global ThrottlerGuard
+- ValidationPipe({ whitelist: true, transform: true }), Helmet, CORS allowlist qua env (CSV hoặc "*")
+- Global prefix: /api; endpoint GET /api/healthz
+- CI: lint, unit, e2e cơ bản; .env.example
+
+2) Phase 2 — Schema & Persistence
+- Postgres + Prisma init; DATABASE_URL; generate/migrate
+- Bảng: users, conversations, participants, messages, message_status; indexes cơ bản
+- Seed tối thiểu; repository/service base
+
+3) Phase 3 — AuthN/Z (JWT + RBAC)
+- Hash mật khẩu (argon2/bcrypt), JWT access + refresh (rotation, TTL)
+- Guards: JwtAuthGuard, RolesGuard; rate limit riêng cho auth
+- E2E: signup/login/refresh; bảo vệ route /me
+
+4) Phase 4 — Messaging Core (REST)
+- Conversations CRUD, join/list
+- Messages create/list (pagination, desc by createdAt), read receipts
+- DTO validation đầy đủ; chống N+1; OpenAPI mô tả endpoint
+
+5) Phase 5 — Realtime/WebSocket
+- WS Gateway (auth handshake bằng JWT)
+- Sự kiện: message:new, message:read, typing, presence tối thiểu
+- Rate limiting WS, chống spam, backpressure cơ bản; room theo conversationId
+
+6) Phase 6 — Observability & Ops
+- Logging có cấu trúc, correlationId
+- Metrics Prometheus: HTTP, WS, DB latency/throughput
+- /metrics, /healthz nâng cao (readiness/liveness)
+
+7) Phase 7 — Hardening & Performance
+- Request size limits, upload constraints
+- Redis cache cho truy vấn nóng; tối ưu truy vấn + index
+- Pen-test checklist, lỗi nhất quán không lộ nội bộ
+
+8) Phase 8 — Calls Signaling (WebRTC)
+- WebSocket events: call:initiate, call:accept, call:reject, call:ice_candidate
+- JWT auth cho WS signaling; mapping theo userId/conversationId
+- Push Notifications (FCM/APNS) cho cuộc gọi đến; trạng thái cuộc gọi cơ bản
+
+9) Phase 9 — Media & Groups Enhancements
+- Upload media (S3/MinIO presigned URLs); metadata DB
+- Messages nâng cao: reactions, reply/quote, delete/recall
+- Nhóm: vai trò admin/member, avatar/tên, quản trị cơ bản
+- Seek pagination cho messages
+
+10) Phase 10 — Search/Indexing (tuỳ nhu cầu)
+- PostgreSQL Full-Text Search hoặc OpenSearch/Elasticsearch
+- Index/search API đồng bộ AuthZ
+
+Tùy chọn: Polyglot Persistence (MongoDB Read Model)
+- Mục tiêu: tăng tốc độ đọc timeline tin nhắn dưới tải cao, giữ Postgres là source of truth
+- Outbox Pattern trong Postgres cho sự kiện messages; projector/worker sync sang Mongo (idempotent, retry, dead-letter)
+- Repository phân tách: Write (Postgres) / Read (Mongo)
+- Index Mongo gợi ý: { conversation_id: 1, created_at: -1 }, { sender_id: 1, created_at: -1 }
+- Observability: metrics độ trễ projector, backlog outbox; alert khi vượt ngưỡng
+- Env: MONGODB_URI, MONGODB_DBNAME
