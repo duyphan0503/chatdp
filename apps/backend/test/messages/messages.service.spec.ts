@@ -91,6 +91,28 @@ describe('MessagesService', () => {
     expect(prisma.messageStatus!.update).toHaveBeenCalled();
   });
 
+  it('markRead is idempotent (second call no-op)', async () => {
+    // First call transitions delivered -> read
+    (prisma.message!.findUnique as jest.Mock)
+      .mockResolvedValueOnce({ id: 'm4', conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] } })
+      .mockResolvedValueOnce({ id: 'm4', conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] } });
+    (prisma.messageStatus!.findUnique as jest.Mock)
+      .mockResolvedValueOnce({ messageId: 'm4', userId: 'u2', status: DeliveryStatus.delivered, readAt: null })
+      .mockResolvedValueOnce({ messageId: 'm4', userId: 'u2', status: DeliveryStatus.read, readAt: new Date() });
+    (prisma.messageStatus!.update as jest.Mock).mockResolvedValueOnce({
+      messageId: 'm4',
+      userId: 'u2',
+      status: DeliveryStatus.read,
+      readAt: new Date(),
+    });
+
+    await service.markRead('m4', 'u2');
+    await service.markRead('m4', 'u2');
+
+    // update should be called only once across two calls
+    expect(prisma.messageStatus!.update).toHaveBeenCalledTimes(1);
+  });
+
   it('getStatuses returns statuses for participant', async () => {
     (prisma.message!.findUnique as jest.Mock).mockResolvedValueOnce({
       id: 'm3',
