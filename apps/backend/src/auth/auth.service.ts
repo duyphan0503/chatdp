@@ -5,7 +5,10 @@ import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { add } from 'date-fns';
 import { UserRepository, UserRecord } from '../repositories/user.repository.js';
-import { RefreshTokenRepository, RefreshTokenRecord } from '../repositories/refresh-token.repository.js';
+import {
+  RefreshTokenRepository,
+  RefreshTokenRecord,
+} from '../repositories/refresh-token.repository.js';
 
 export interface AuthTokens {
   accessToken: string;

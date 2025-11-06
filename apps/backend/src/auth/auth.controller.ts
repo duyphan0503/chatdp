@@ -4,16 +4,23 @@ import { LoginDto } from './dto/login.dto.js';
 import { SignupDto } from './dto/signup.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 
-function extractClientIp(req: any): string | null {
+function headerValue(val: string | string[] | undefined): string | null {
+  if (typeof val === 'string' && val.length > 0) return val;
+  if (Array.isArray(val) && typeof val[0] === 'string' && val[0].length > 0) return val[0];
+  return null;
+}
+
+function extractClientIp(req: Request): string | null {
   // Prefer Cloudflare/Akamai headers when present
-  const cf = req.headers?.['cf-connecting-ip'];
-  if (typeof cf === 'string' && cf.length > 0) return cf;
-  const tci = req.headers?.['true-client-ip'];
-  if (typeof tci === 'string' && tci.length > 0) return tci;
+  const cf = headerValue(req.headers['cf-connecting-ip']);
+  if (cf) return cf;
+  const tci = headerValue(req.headers['true-client-ip']);
+  if (tci) return tci;
   // Fallback to standard X-Forwarded-For chain (left-most = client)
-  const xff = req.headers?.['x-forwarded-for'];
-  if (typeof xff === 'string' && xff.length > 0) {
+  const xff = headerValue(req.headers['x-forwarded-for']);
+  if (xff) {
     const first = xff.split(',')[0]?.trim();
     if (first) return first;
   }
@@ -26,33 +33,36 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('signup')
-  async signup(@Body() body: SignupDto, @Req() req: any): Promise<AuthTokens> {
+  async signup(@Body() body: SignupDto, @Req() req: Request): Promise<AuthTokens> {
+    const ua = headerValue(req.headers['user-agent']);
     return this.auth.signup(
       {
         email: body.email,
         password: body.password,
         displayName: body.displayName,
       },
-      { userAgent: req.headers['user-agent'] ?? null, ip: extractClientIp(req) },
+      { userAgent: ua, ip: extractClientIp(req) },
     );
   }
 
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() body: LoginDto, @Req() req: any): Promise<AuthTokens> {
+  async login(@Body() body: LoginDto, @Req() req: Request): Promise<AuthTokens> {
+    const ua = headerValue(req.headers['user-agent']);
     return this.auth.login(
       { email: body.email, password: body.password },
-      { userAgent: req.headers['user-agent'] ?? null, ip: extractClientIp(req) },
+      { userAgent: ua, ip: extractClientIp(req) },
     );
   }
 
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refresh(@Body() body: RefreshDto, @Req() req: any): Promise<AuthTokens> {
+  async refresh(@Body() body: RefreshDto, @Req() req: Request): Promise<AuthTokens> {
+    const ua = headerValue(req.headers['user-agent']);
     return this.auth.refresh(body.refreshToken, {
-      userAgent: req.headers['user-agent'] ?? null,
+      userAgent: ua,
       ip: extractClientIp(req),
     });
   }
@@ -60,7 +70,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(@Body() body: RefreshDto, @Req() _req: any): Promise<{ success: true }> {
+  async logout(@Body() body: RefreshDto): Promise<{ success: true }> {
     await this.auth.logout(body.refreshToken);
     return { success: true } as const;
   }

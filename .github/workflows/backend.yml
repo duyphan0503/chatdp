@@ -56,6 +56,6 @@ jobs:
       - name: Build
         run: pnpm build --filter=@chatdp/backend
       - name: Unit test
-        run: pnpm test --filter=@chatdp/backend -- --runInBand
+        run: pnpm --filter @chatdp/backend test
       - name: E2E test (including negative cases)
-        run: pnpm --filter @chatdp/backend test:e2e -- --runInBand
+        run: pnpm --filter @chatdp/backend test:e2e
