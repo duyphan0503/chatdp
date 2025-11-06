@@ -43,10 +43,24 @@ jobs:
         run: pnpm --filter @chatdp/backend prisma:generate || echo "skip prisma generate"
       - name: Set up env
         run: |
-          cp apps/backend/.env.example apps/backend/.env || true
-          sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public|' apps/backend/.env
-          sed -i 's|JWT_SECRET=.*|JWT_SECRET=ci_secret|' apps/backend/.env
-          sed -i 's|REFRESH_TOKEN_TTL=.*|REFRESH_TOKEN_TTL=2m|' apps/backend/.env
+          mkdir -p apps/backend
+          if [ -f apps/backend/.env.example ]; then
+            cp apps/backend/.env.example apps/backend/.env
+          else
+            touch apps/backend/.env
+          fi
+          # Ensure required keys exist (replace or append)
+          ensure_var() {
+            key="$1"; value="$2"; file="$3"
+            if grep -q "^${key}=" "$file"; then
+              sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+            else
+              echo "${key}=${value}" >> "$file"
+            fi
+          }
+          ensure_var DATABASE_URL 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public' apps/backend/.env
+          ensure_var JWT_SECRET 'ci_secret' apps/backend/.env
+          ensure_var REFRESH_TOKEN_TTL '2m' apps/backend/.env
       - name: Migrate DB (deploy only)
         run: pnpm --filter @chatdp/backend prisma:migrate:deploy || echo "deploy skipped"
       - name: Prisma generate
