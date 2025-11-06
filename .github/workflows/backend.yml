@@ -14,6 +14,20 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: chatdp
+          POSTGRES_PASSWORD: chatdp
+          POSTGRES_DB: chatdp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chatdp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -23,13 +37,25 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - name: Install deps
-        run: pnpm -C apps/backend install || pnpm install
+      - name: Install deps (workspace)
+        run: pnpm install
+      - name: Prisma generate
+        run: pnpm --filter @chatdp/backend prisma:generate || echo "skip prisma generate"
+      - name: Set up env
+        run: |
+          cp apps/backend/.env.example apps/backend/.env || true
+          sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public|' apps/backend/.env
+          sed -i 's|JWT_SECRET=.*|JWT_SECRET=ci_secret|' apps/backend/.env
+          sed -i 's|REFRESH_TOKEN_TTL=.*|REFRESH_TOKEN_TTL=2m|' apps/backend/.env
+      - name: Migrate DB (deploy only)
+        run: pnpm --filter @chatdp/backend prisma:migrate:deploy || echo "deploy skipped"
       - name: Prisma generate
         run: pnpm --filter @chatdp/backend prisma:generate || echo "skip prisma generate"
       - name: Lint
-        run: pnpm lint --filter=@chatdp/backend || echo "skip lint (no deps)"
+        run: pnpm lint --filter=@chatdp/backend
       - name: Build
-        run: pnpm build --filter=@chatdp/backend || echo "skip build (scaffold)"
-      - name: Test
-        run: pnpm test --filter=@chatdp/backend -- --coverage --runInBand || echo "skip tests (scaffold)"
+        run: pnpm build --filter=@chatdp/backend
+      - name: Unit test
+        run: pnpm test --filter=@chatdp/backend -- --runInBand
+      - name: E2E test (including negative cases)
+        run: pnpm --filter @chatdp/backend test:e2e -- --runInBand

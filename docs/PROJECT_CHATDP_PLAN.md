@@ -242,6 +242,18 @@ Phần này cụ thể hoá lộ trình ở trên thành các phase triển khai
 - Bảng: users, conversations, participants, messages, message_status; indexes cơ bản
 - Seed tối thiểu; repository/service base
 
+Tiến độ: ĐÃ HOÀN THÀNH (baseline)
+- Prisma schema + migration đã có, repositories + unit tests đã xanh.
+- Docker compose Postgres dev: `pnpm --filter @chatdp/backend db:up`
+- Prisma generate/migrate/seed:
+  - `pnpm --filter @chatdp/backend prisma:generate`
+  - `pnpm --filter @chatdp/backend prisma:migrate:dev`
+  - `pnpm --filter @chatdp/backend prisma:seed`
+- Env mẫu & chiến lược ENV 2-file:
+  - Committed: `apps/backend/.env.example` (template, push lên git)
+  - Local dev & test: `apps/backend/.env` (dùng chung cho development và test)
+  - CI/Prod: thiết lập biến môi trường qua CI/hosting, KHÔNG commit file `.env`
+
 3) Phase 3 — AuthN/Z (JWT + RBAC)
 - Hash mật khẩu (argon2/bcrypt), JWT access + refresh (rotation, TTL)
 - Guards: JwtAuthGuard, RolesGuard; rate limit riêng cho auth
@@ -289,3 +301,92 @@ Tùy chọn: Polyglot Persistence (MongoDB Read Model)
 - Index Mongo gợi ý: { conversation_id: 1, created_at: -1 }, { sender_id: 1, created_at: -1 }
 - Observability: metrics độ trễ projector, backlog outbox; alert khi vượt ngưỡng
 - Env: MONGODB_URI, MONGODB_DBNAME
+
+---
+
+## Phụ lục A: Chiến lược ENV (2-file)
+
+Đơn giản hoá để phù hợp team 1-dev:
+- Chỉ dùng 2 file cho backend
+  - `.env.example`: file hướng dẫn (được commit)
+  - `.env`: file local dùng cho cả development và test
+- NestJS ConfigModule (EnvConfigModule) nạp theo thứ tự: `apps/backend/.env` → `.env`.
+- Không sử dụng `.env.test`. Test runner cũng đọc `.env`.
+- .gitignore đã chặn `.env` / `.env.*` toàn repo.
+
+Khuyến nghị:
+- Với CI/Prod: dùng biến môi trường runtime (secrets/vars), không đưa `.env` lên repo.
+- Nếu cần khác biệt giữa dev/test, có thể override tạm thời bằng cách export env trước khi chạy lệnh (ví dụ: `JWT_SECRET=... pnpm test:backend`).
+
+## Phụ lục B: Refresh Token Binding (UA/IP) & Proxy Awareness
+
+Mục tiêu: Nâng cao bảo mật cho quá trình refresh token bằng cách ràng buộc (bind) refresh token với thiết bị/phiên bản client (User-Agent) và/hoặc địa chỉ IP nguồn. Đồng thời cấu hình server hoạt động đúng phía sau reverse proxy (Nginx/ALB/Cloudflare).
+
+### Cách hoạt động
+- Khi signup/login, server phát hành access token + refresh token, đồng thời lưu `userAgent` và `ip` (nếu có) kèm refresh token trong DB.
+- Khi gọi `/auth/refresh`, nếu bật binding, server sẽ kiểm tra `User-Agent` và/hoặc `IP` từ request có khớp với giá trị đã lưu cùng refresh token hay không. Không khớp → 401.
+
+### Biến môi trường
+- `REFRESH_BIND_UA_IP` (mặc định: `true`): Bật binding cả UA và IP.
+- `REFRESH_BIND_UA`, `REFRESH_BIND_IP`: Tuỳ chọn chi tiết. Nếu không đặt, hai biến này kế thừa giá trị từ `REFRESH_BIND_UA_IP`.
+- `TRUST_PROXY` (mặc định: `false`): Khi `true`, Express sẽ tin cậy header `X-Forwarded-For` để xác định IP client thực (phải cấu hình proxy đúng chuẩn).
+
+Ví dụ `.env` (backend):
+```
+# Binding
+REFRESH_BIND_UA_IP=true
+# REFRESH_BIND_UA=true
+# REFRESH_BIND_IP=true
+
+# Proxy
+TRUST_PROXY=true  # BẬT trong môi trường có reverse proxy
+```
+
+### Khuyến nghị (phương án tối ưu)
+- Giữ `REFRESH_BIND_UA_IP=true` trong production để tăng bảo mật; nếu có vấn đề IP thay đổi thường xuyên (mạng di động/NAT), có thể tách:
+  - `REFRESH_BIND_UA=true` và `REFRESH_BIND_IP=false` để chỉ bind theo `User-Agent`.
+- Trong môi trường production phía sau reverse proxy (Nginx/ALB/Cloudflare): BẬT `TRUST_PROXY=true` và cấu hình proxy truyền đúng IP client qua `X-Forwarded-For`.
+- Trong môi trường local/dev không có proxy: ĐỂ `TRUST_PROXY=false`.
+
+### Cấu hình Nginx mẫu
+```
+# Nginx ở trước ứng dụng NestJS
+# Thiết lập IP thực từ mạng nội bộ/LB (chỉnh lại CIDR theo hạ tầng của bạn)
+set_real_ip_from 10.0.0.0/8;
+set_real_ip_from 172.16.0.0/12;
+set_real_ip_from 192.168.0.0/16;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+server {
+  listen 80;
+  server_name your.domain;
+
+  location / {
+    proxy_pass http://backend:3000; # container/service NestJS
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+}
+```
+
+### Cloudflare (khuyến nghị cho bạn)
+- BẬT `TRUST_PROXY=true` trong backend.
+- Cloudflare sẽ gửi IP client thật qua `CF-Connecting-IP`; code đã ưu tiên đọc `cf-connecting-ip` và `true-client-ip`, sau đó mới `x-forwarded-for`.
+- Bật “Authenticated Origin Pulls” nếu có thể, và giới hạn firewall/chỉ chấp nhận traffic từ dải IP Cloudflare đến origin.
+- Tại Cloudflare:
+  - SSL/TLS mode: Full (strict) nếu có chứng chỉ hợp lệ ở origin.
+  - Transform Rules/Rulesets: không ghi đè `User-Agent`, bảo toàn header.
+  - Ensure Brotli/Compression không ảnh hưởng header; HTTP/2/3 OK.
+- Trên origin (Nginx nếu có): không cần sửa đặc biệt; chỉ cần pass-through, không ghi đè IP.
+
+Lưu ý:
+- Chỉ bật `TRUST_PROXY=true` khi bạn kiểm soát reverse proxy/CDN và đã cấu hình forwarding đúng. Nếu không, header `X-Forwarded-For` có thể bị giả mạo.
+- OpenAPI đã mô tả rằng `/auth/refresh` có thể yêu cầu giữ nguyên `User-Agent` và IP theo cấu hình server.
+
+### Ảnh hưởng phía Client
+- Client cần giữ nguyên `User-Agent` giữa các lần gọi `refresh` (mặc định UA/IP đều được bind). Trên mobile, UA thường ổn định; trên web, tránh thay đổi UA tùy ý.
+- Khi có proxy/CDN, bảo đảm chúng bảo tồn header `User-Agent` và truyền `X-Forwarded-For` đúng IP client.

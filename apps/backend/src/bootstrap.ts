@@ -24,6 +24,12 @@ export function configureApp(app: INestApplication): void {
   // Security headers
   app.use(helmet());
 
+  // Trust proxy if explicitly enabled (for accurate client IP)
+  if ((process.env.TRUST_PROXY ?? '').toLowerCase() === 'true') {
+    // @ts-expect-error express setting available at runtime
+    app.set('trust proxy', true);
+  }
+
   // CORS allowlist from env (CSV or '*')
   const corsOrigins = parseCorsOrigins(process.env.CORS_ORIGINS);
   app.enableCors({ origin: corsOrigins, credentials: true });

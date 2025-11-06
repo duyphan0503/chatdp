@@ -16,6 +16,8 @@
     "ci": "echo Run CI locally via turbo or gh"
   },
   "devDependencies": {
+    "@types/passport-jwt": "^4.0.1",
+    "date-fns": "^4.1.0",
     "turbo": "^2.6.0"
   }
 }
