@@ -15,12 +15,23 @@ export interface ListMessagesOptions {
   cursor?: string; // for seek-based pagination by id
 }
 
+// Repository-level representation of a message
+export interface MessageRecord {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  contentType: 'text' | 'image' | 'video' | 'file' | 'voice';
+  content: string | null;
+  mediaUrl: string | null;
+  createdAt: Date;
+}
+
 @Injectable()
 export class MessageRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createMessage(data: CreateMessageInput): Promise<unknown> {
-    return this.prisma.message.create({
+  async createMessage(data: CreateMessageInput): Promise<MessageRecord> {
+    return (await this.prisma.message.create({
       data: {
         contentType: data.contentType,
         content: data.content ?? undefined,
@@ -28,24 +39,24 @@ export class MessageRepository {
         conversation: { connect: { id: data.conversationId } },
         sender: { connect: { id: data.senderId } },
       },
-    });
+    })) as unknown as MessageRecord;
   }
 
-  async listByConversation(opts: ListMessagesOptions): Promise<unknown[]> {
+  async listByConversation(opts: ListMessagesOptions): Promise<MessageRecord[]> {
     const take = Math.min(Math.max(opts.limit ?? 20, 1), 100);
     if (opts.cursor) {
-      return this.prisma.message.findMany({
+      return (await this.prisma.message.findMany({
         where: { conversationId: opts.conversationId },
         orderBy: { createdAt: 'desc' },
         take,
         skip: 1,
         cursor: { id: opts.cursor },
-      });
+      })) as unknown as MessageRecord[];
     }
-    return this.prisma.message.findMany({
+    return (await this.prisma.message.findMany({
       where: { conversationId: opts.conversationId },
       orderBy: { createdAt: 'desc' },
       take,
-    });
+    })) as unknown as MessageRecord[];
   }
 }

@@ -1,6 +1,7 @@
 {
   "name": "chatdp-monorepo",
   "private": true,
+  "packageManager": "pnpm@10.20.0",
   "workspaces": [
     "apps/backend",
     "packages/*"
@@ -16,6 +17,8 @@
     "ci": "echo Run CI locally via turbo or gh"
   },
   "devDependencies": {
+    "@types/passport-jwt": "^4.0.1",
+    "date-fns": "^4.1.0",
     "turbo": "^2.6.0"
   }
 }

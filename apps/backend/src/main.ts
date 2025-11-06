@@ -7,7 +7,9 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   configureApp(app);
 
-  const port = Number(process.env.PORT) || 3000;
+  const envPort = process.env.PORT;
+  const parsed = envPort !== undefined ? Number(envPort) : NaN;
+  const port = Number.isFinite(parsed) ? parsed : 3000;
   await app.listen(port);
 
   const logger = new Logger('Bootstrap');

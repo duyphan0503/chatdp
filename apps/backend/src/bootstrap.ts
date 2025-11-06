@@ -20,9 +20,38 @@ function parseCorsOrigins(
   return raw;
 }
 
+// Narrowed types to avoid any-casts while accessing Express instance
+interface HttpAdapterLike {
+  getInstance: () => unknown;
+}
+
+interface ExpressLike {
+  set: (key: string, value: unknown) => void;
+}
+
+function getExpressInstance(app: INestApplication): ExpressLike | null {
+  const maybeAdapter = (
+    app as unknown as { getHttpAdapter?: () => HttpAdapterLike }
+  ).getHttpAdapter?.();
+  if (!maybeAdapter || typeof maybeAdapter.getInstance !== 'function') return null;
+  const instance = maybeAdapter.getInstance();
+  if (instance && typeof (instance as { set?: unknown }).set === 'function') {
+    return instance as ExpressLike;
+  }
+  return null;
+}
+
 export function configureApp(app: INestApplication): void {
   // Security headers
   app.use(helmet());
+
+  // Trust proxy if explicitly enabled (for accurate client IP)
+  if ((process.env.TRUST_PROXY ?? '').toLowerCase() === 'true') {
+    const express = getExpressInstance(app);
+    if (express) {
+      express.set('trust proxy', true);
+    }
+  }
 
   // CORS allowlist from env (CSV or '*')
   const corsOrigins = parseCorsOrigins(process.env.CORS_ORIGINS);

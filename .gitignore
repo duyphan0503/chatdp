@@ -4,7 +4,7 @@ coverage/
 .pnpm-store/
 .DS_Store
 .env
-.env.*
+!.env.example
 .prisma/
 .idea/
 AGENTS.md
