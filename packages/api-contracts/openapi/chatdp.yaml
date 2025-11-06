@@ -75,6 +75,114 @@ components:
           type: string
         error:
           type: string
+
+    # Conversations
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [private, group]
+        groupName:
+          type: string
+          nullable: true
+        groupAvatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ConversationCreateRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [private, group]
+        participantUserIds:
+          type: array
+          items:
+            type: string
+          description: For private, must contain exactly one other user ID
+        groupName:
+          type: string
+          nullable: true
+        groupAvatarUrl:
+          type: string
+          nullable: true
+    ConversationUpdateRequest:
+      type: object
+      properties:
+        groupName:
+          type: string
+        groupAvatarUrl:
+          type: string
+
+    # Messages
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        senderId:
+          type: string
+        contentType:
+          type: string
+          enum: [text, image, video, file, voice]
+        content:
+          type: string
+          nullable: true
+        mediaUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    MessageCreateRequest:
+      type: object
+      required: [contentType]
+      properties:
+        contentType:
+          type: string
+          enum: [text, image, video, file, voice]
+        content:
+          type: string
+          nullable: true
+        mediaUrl:
+          type: string
+          nullable: true
+    MessageListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        nextCursor:
+          type: string
+          nullable: true
+    MessageStatus:
+      type: object
+      properties:
+        messageId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [delivered, read]
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
 paths:
   /auth/signup:
     post:
@@ -209,6 +317,351 @@ paths:
                 $ref: '#/components/schemas/MeResponse'
         '401':
           description: Unauthorized (missing/invalid JWT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Conversations
+  /conversations:
+    get:
+      tags: [Conversations]
+      summary: List conversations for current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Conversations]
+      summary: Create a conversation (private or group)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /conversations/{id}:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+    get:
+      tags: [Conversations]
+      summary: Get conversation by id (must be a participant)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Conversations]
+      summary: Update group conversation metadata
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /conversations/{id}/join:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+    post:
+      tags: [Conversations]
+      summary: Join a conversation
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Messages
+  /conversations/{conversationId}/messages:
+    parameters:
+      - in: path
+        name: conversationId
+        schema:
+          type: string
+        required: true
+    get:
+      tags: [Messages]
+      summary: List messages in a conversation (seek pagination)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Message ID cursor (exclusive)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Messages]
+      summary: Create a message in the conversation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /messages/{messageId}/read:
+    parameters:
+      - in: path
+        name: messageId
+        schema:
+          type: string
+        required: true
+    post:
+      tags: [Messages]
+      summary: Mark a specific message as read by current user
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Read status created/updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: '#/components/schemas/Message'
+                  status:
+                    $ref: '#/components/schemas/MessageStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /messages/{messageId}/status:
+    parameters:
+      - in: path
+        name: messageId
+        schema:
+          type: string
+        required: true
+    get:
+      tags: [Messages]
+      summary: List delivery/read statuses for a message (participants only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:

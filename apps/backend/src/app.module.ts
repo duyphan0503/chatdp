@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { EnvConfigModule } from './config/env.config.js';
+import { ConversationsModule } from './conversations/conversations.module.js';
+import { MessagesModule } from './messages/messages.module.js';
 
 @Module({
   imports: [
@@ -36,6 +38,9 @@ import { EnvConfigModule } from './config/env.config.js';
     // Phase 3: Auth & Users modules
     AuthModule,
     UsersModule,
+    // Phase 4: Conversations & Messages modules
+    ConversationsModule,
+    MessagesModule,
   ],
   controllers: [HealthController],
   providers: [
