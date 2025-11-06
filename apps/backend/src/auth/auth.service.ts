@@ -13,6 +13,12 @@ import {
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  user: {
+    id: string;
+    email: string | null;
+    displayName: string;
+    avatarUrl: string | null;
+  };
 }
 
 type RefreshContext = { userAgent?: string | null; ip?: string | null };
@@ -159,7 +165,16 @@ export class AuthService {
       ip: ctx?.ip ?? null,
     });
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl ?? null,
+      },
+    };
   }
 
   private computeExpiry(ttl: string): Date {
