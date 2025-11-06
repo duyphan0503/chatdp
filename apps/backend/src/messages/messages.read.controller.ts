@@ -23,12 +23,27 @@ interface MessageReadResponse {
   status: MessageStatusResponse;
 }
 
-function mapMessage(m: any) {
+type MessageEntity = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  contentType: string;
+  content: string | null;
+  mediaUrl: string | null;
+  createdAt: Date;
+};
+
+function mapMessage(m: MessageEntity): MessageEntity {
   const { id, conversationId, senderId, contentType, content, mediaUrl, createdAt } = m;
   return { id, conversationId, senderId, contentType, content, mediaUrl, createdAt };
 }
 
-function mapStatus(s: any): MessageStatusResponse {
+function mapStatus(s: {
+  messageId: string;
+  userId: string;
+  status: string;
+  readAt: Date | null;
+}): MessageStatusResponse {
   const { messageId, userId, status, readAt } = s;
   return { messageId, userId, status, readAt };
 }
@@ -43,7 +58,7 @@ export class MessagesReadController {
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
     @Req() req: Request,
   ): Promise<MessageReadResponse> {
-    const { userId } = req.user as any;
+    const { userId } = req.user as { userId: string };
     const { message, status } = await this.messages.markRead(messageId, userId);
     return { message: mapMessage(message), status: mapStatus(status) };
   }
@@ -53,7 +68,7 @@ export class MessagesReadController {
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
     @Req() req: Request,
   ): Promise<MessageStatusResponse[]> {
-    const { userId } = req.user as any;
+    const { userId } = req.user as { userId: string };
     const statuses = await this.messages.getStatuses(messageId, userId);
     return statuses.map(mapStatus);
   }

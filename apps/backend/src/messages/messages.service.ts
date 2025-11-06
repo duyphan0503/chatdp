@@ -1,13 +1,18 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DeliveryStatus } from '@prisma/client';
+import { DeliveryStatus, ContentType, Prisma, Message, MessageStatus } from '@prisma/client';
 import { MessageCreateDto } from './dto/message-create.dto.js';
 
 @Injectable()
 export class MessagesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(conversationId: string, senderId: string, dto: MessageCreateDto) {
+  async create(conversationId: string, senderId: string, dto: MessageCreateDto): Promise<Message> {
     // Ensure conversation exists and load participants to compute statuses inside a transaction
     return this.prisma.$transaction(async (tx) => {
       const conv = await tx.conversation.findUnique({
@@ -26,7 +31,7 @@ export class MessagesService {
         data: {
           conversationId,
           senderId,
-          contentType: dto.contentType as any,
+          contentType: dto.contentType as ContentType, // enum narrowed by DTO union
           content: dto.content ?? null,
           mediaUrl: dto.mediaUrl ?? null,
         },
@@ -44,7 +49,12 @@ export class MessagesService {
     });
   }
 
-  async list(conversationId: string, userId: string, limit = 20, cursor?: string): Promise<{ items: any[]; nextCursor: string | null }> {
+  async list(
+    conversationId: string,
+    userId: string,
+    limit = 20,
+    cursor?: string,
+  ): Promise<{ items: Message[]; nextCursor: string | null }> {
     // Enforce participant
     const participant = await this.prisma.participant.findUnique({
       where: { userId_conversationId: { userId, conversationId } },
@@ -53,22 +63,23 @@ export class MessagesService {
     if (!participant) throw new ForbiddenException('not a participant');
 
     const take = Math.min(Math.max(limit ?? 20, 1), 100);
-    const query: any = {
+    const baseQuery: Prisma.MessageFindManyArgs = {
       where: { conversationId },
       orderBy: { createdAt: 'desc' },
-      take: take + 1, // fetch one extra to compute nextCursor
+      take: take + 1,
     };
-    if (cursor) {
-      query.cursor = { id: cursor };
-      query.skip = 1; // exclude the cursor itself
-    }
-    const rows = await this.prisma.message.findMany(query);
+    const rows = await this.prisma.message.findMany(
+      cursor ? { ...baseQuery, cursor: { id: cursor }, skip: 1 } : baseQuery,
+    );
     const items = rows.slice(0, take);
-    const nextCursor = rows.length > take ? items[items.length - 1]?.id ?? null : null;
+    const nextCursor = rows.length > take ? (items[items.length - 1]?.id ?? null) : null;
     return { items, nextCursor };
   }
 
-  async markRead(messageId: string, userId: string) {
+  async markRead(
+    messageId: string,
+    userId: string,
+  ): Promise<{ message: Message; status: MessageStatus }> {
     const msg = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: { conversation: { include: { participants: true } } },
@@ -82,7 +93,7 @@ export class MessagesService {
       where: { messageId_userId: { messageId, userId } },
     });
 
-    let statusRecord;
+    let statusRecord: MessageStatus;
     if (existing) {
       if (existing.status !== DeliveryStatus.read) {
         statusRecord = await this.prisma.messageStatus.update({
@@ -101,7 +112,7 @@ export class MessagesService {
     return { message: msg, status: statusRecord };
   }
 
-  async getStatuses(messageId: string, userId: string) {
+  async getStatuses(messageId: string, userId: string): Promise<MessageStatus[]> {
     const msg = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: { conversation: { include: { participants: true } } },
