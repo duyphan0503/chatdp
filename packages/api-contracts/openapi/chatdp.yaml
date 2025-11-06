@@ -14,7 +14,7 @@ components:
   schemas:
     AuthTokens:
       type: object
-      required: [accessToken, refreshToken]
+      required: [accessToken, refreshToken, user]
       properties:
         accessToken:
           type: string
@@ -22,6 +22,19 @@ components:
         refreshToken:
           type: string
           description: JWT refresh token
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+              nullable: true
+            displayName:
+              type: string
+            avatarUrl:
+              type: string
+              nullable: true
     LoginRequest:
       type: object
       required: [email, password]
