@@ -130,33 +130,37 @@ Nest.js đã có cấu trúc module mạnh mẽ, chúng ta sẽ tổ chức nó 
 * `/conversations/:id/messages` (GET) - Lấy lịch sử tin nhắn (phân trang).
 * `/media/upload` (POST) - Tải lên ảnh/video, trả về URL.
 
-### 5.2. WebSocket Events (Nest.js Gateway)
+### 5.2. WebSocket Events (Phase 5 Implemented)
 
-WebSocket sẽ xử lý các hành động real-time.
+Các sự kiện hiện đang được triển khai trong Phase 5 (Messaging realtime). Những sự kiện liên quan tới cuộc gọi (`call:*`) sẽ được thêm ở Phase 8.
 
-**Client gửi lên (Emit):**
+**Client emit (đang dùng):**
 
-* `authenticate` (Gửi JWT token để xác thực WebSocket session).
-* `message:send` (Gửi tin nhắn mới - text, media).
-* `message:typing:start` (Bắt đầu gõ).
-* `message:typing:stop` (Ngừng gõ).
-* `message:read` (Báo đã đọc tin nhắn).
-* `call:initiate` (Bắt đầu cuộc gọi - gửi thông tin *signaling* cho WebRTC).
-* `call:accept` (Chấp nhận cuộc gọi).
-* `call:reject` (Từ chối cuộc gọi).
-* `call:ice_candidate` (Gửi ICE candidate cho WebRTC).
+* `authenticate`  Gửi JWT access token để xác thực phiên WS.
+* `conversation:join`  Tham gia room của 1 conversation (chỉ khi là participant).
+* `conversation:leave`  Rời conversation room.
+* `typing`  Gửi trạng thái đang gõ.
+* `message:new`  Tạo tin nhắn mới (text/media) và broadcast tới conversation.
+* `message:read`  Đánh dấu một tin nhắn là đã đọc.
 
-**Server gửi xuống (Listen):**
+**Server emit (đang dùng):**
 
-* `message:new` (Nhận tin nhắn mới).
-* `message:typing:notify` (Thông báo có người đang gõ).
-* `message:status:update` (Cập nhật trạng thái tin nhắn - đã nhận, đã đọc).
-* `user:status:update` (Cập nhật trạng thái online/offline).
-* `call:incoming` (Nhận cuộc gọi đến).
-* `call:accepted` (Cuộc gọi được chấp nhận).
-* `call:rejected` (Cuộc gọi bị từ chối).
-* `call:ice_candidate` (Nhận ICE candidate từ đối phương).
-* `exception` (Thông báo lỗi, ví dụ: không thể gửi tin).
+* `authenticated`  Xác thực thành công.
+* `unauthorized`  Token không hợp lệ (socket sẽ bị đóng).
+* `conversation:joined` / `conversation:left`  Phản hồi join/leave.
+* `typing`  Có participant đang gõ (fan-out tới room, trừ sender).
+* `message:new`  Tin nhắn mới vừa được tạo.
+* `message:read`  Một participant đã đọc tin nhắn.
+* `rate:limit`  Bị giới hạn tốc độ gửi sự kiện (spam control).
+* `error`  Lỗi nghiệp vụ (ví dụ: không phải participant, gửi message thất bại).
+
+**Rate limiting (in-memory tạm thời):**
+- Biến môi trường: `WS_RATE_LIMIT_TTL` (s), `WS_RATE_LIMIT_LIMIT` (số sự kiện/window) áp dụng cho `typing` và `message:new`.
+- Triển khai hiện tại: in-memory Map (per instance). Triển khai phân tán (Redis) sẽ thực hiện ở Phase 7 (Hardening).
+
+**Sự kiện dự kiến ở các phase sau:**
+- Phase 8 (Calls): `call:initiate`, `call:accept`, `call:reject`, `call:ice_candidate`.
+- Presence nâng cao / user status broadcast sẽ được chuẩn hoá thêm (`user:status:update`).
 
 ---
 

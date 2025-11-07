@@ -85,5 +85,35 @@ Run (frontend):
 10) OpenAPI contracts + codegen
 11) Observability
 
+## WebSocket (Realtime) Events - Phase 5
+
+Implemented gateway events (Calls signaling sẽ ở Phase 8):
+
+Client -> Server:
+- authenticate: JWT access token để mở phiên WebSocket.
+- conversation:join / conversation:leave: tham gia / rời conversation room.
+- typing: trạng thái đang gõ.
+- message:new: gửi tin nhắn mới (text/media).
+- message:read: đánh dấu tin nhắn đã đọc.
+
+Server -> Client:
+- authenticated / unauthorized: kết quả xác thực.
+- conversation:joined / conversation:left: phản hồi join/leave.
+- typing: một participant đang gõ.
+- message:new: tin nhắn mới tạo.
+- message:read: trạng thái đọc.
+- rate:limit: vượt ngưỡng tốc độ sự kiện (spam mitigation).
+- error: lỗi nghiệp vụ (không phải participant, gửi thất bại...).
+
+Rate Limiting (in-memory):
+- ENV: WS_RATE_LIMIT_TTL (giây), WS_RATE_LIMIT_LIMIT (số sự kiện / window) cho typing & message:new.
+- Hiện tại per-instance (không phân tán). Kế hoạch chuyển sang Redis (Phase 7 Hardening) để đồng bộ giữa nhiều node.
+
+Room Strategy:
+- conversation:<id> cho fan-out tin nhắn & typing.
+- user:<id> dành cho định tuyến trực tiếp / presence (chuẩn hoá sau).
+
+Future (Phase 8): call:initiate, call:accept, call:reject, call:ice_candidate.
+
 ## License
 Licensed under the Apache License, Version 2.0. See the LICENSE file for details.
