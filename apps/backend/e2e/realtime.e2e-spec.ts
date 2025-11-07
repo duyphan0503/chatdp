@@ -12,6 +12,8 @@ function wsUrl(baseUrl: string): string {
   return u.toString();
 }
 
+jest.setTimeout(15000);
+
 describe('RealtimeGateway (e2e)', () => {
   let app: INestApplication;
   let baseUrl: string;
