@@ -21,7 +21,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/media/**/*",
-    "src/realtime/calls.gateway.ts"
+    "src/media/**/*"
   ]
 }
