@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module.js';
 import { EnvConfigModule } from './config/env.config.js';
 import { ConversationsModule } from './conversations/conversations.module.js';
 import { MessagesModule } from './messages/messages.module.js';
+import { RealtimeModule } from './realtime/realtime.module.js';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { MessagesModule } from './messages/messages.module.js';
     // Phase 4: Conversations & Messages modules
     ConversationsModule,
     MessagesModule,
+    // Phase 5: Realtime/WebSocket module
+    RealtimeModule,
   ],
   controllers: [HealthController],
   providers: [

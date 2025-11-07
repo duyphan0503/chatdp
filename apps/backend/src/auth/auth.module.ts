@@ -28,6 +28,6 @@ import { RefreshTokenRepository } from '../repositories/refresh-token.repository
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserRepository, RefreshTokenRepository],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
