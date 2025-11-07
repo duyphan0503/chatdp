@@ -29,6 +29,9 @@ export class MessagingGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(MessagingGateway.name);
+  private wsRateTtlMs = 60_000;
+  private wsRateLimit = 120;
+  private rateCounters = new Map<string, { windowStart: number; count: number }>();
 
   @WebSocketServer() server!: Server;
 
@@ -38,7 +41,13 @@ export class MessagingGateway
     private readonly messages: MessagesService,
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
-  ) {}
+  ) {
+    // Initialize WS rate limiting from env (Phase 5 hardening)
+    const ttlSec = parseInt(this.config.get<string>('WS_RATE_LIMIT_TTL') ?? '60', 10);
+    const limit = parseInt(this.config.get<string>('WS_RATE_LIMIT_LIMIT') ?? '120', 10);
+    if (!Number.isNaN(ttlSec) && ttlSec > 0) this.wsRateTtlMs = ttlSec * 1000;
+    if (!Number.isNaN(limit) && limit > 0) this.wsRateLimit = limit;
+  }
 
   afterInit(server: Server) {
     this.server = server;
@@ -123,8 +132,12 @@ export class MessagingGateway
     @MessageBody() payload: { conversationId: string; isTyping: boolean },
   ) {
     this.ensureAuthed(client);
+    if (!this.checkRate(client, 'typing')) {
+      client.emit('rate:limit', { event: 'typing', retryAfterMs: this.wsRateTtlMs });
+      return;
+    }
     const userId: string = client.data.userId;
-    const { conversationId, isTyping } = payload ?? {} as any;
+    const { conversationId, isTyping } = (payload ?? {}) as any;
     if (!conversationId) return;
     this.server
       .to(this.conversationRoom(conversationId))
@@ -145,6 +158,10 @@ export class MessagingGateway
     },
   ) {
     this.ensureAuthed(client);
+    if (!this.checkRate(client, 'message:new')) {
+      client.emit('rate:limit', { event: 'message:new', retryAfterMs: this.wsRateTtlMs });
+      return;
+    }
     const userId: string = client.data.userId;
     const { conversationId, contentType, content, mediaUrl } = payload ?? ({} as any);
     if (!conversationId || !contentType) return;
@@ -187,6 +204,29 @@ export class MessagingGateway
     if (!client.data?.userId) {
       throw new UnauthorizedException('not authenticated');
     }
+  }
+
+  private checkRate(client: Socket, event: string): boolean {
+    const userId: string | undefined = client.data.userId;
+    // Fallback to client id if unauthenticated (will be rejected later anyway)
+    const key = `${userId ?? 'anon'}:${event}`;
+    const now = Date.now();
+    const entry = this.rateCounters.get(key);
+    if (!entry) {
+      this.rateCounters.set(key, { windowStart: now, count: 1 });
+      return true;
+    }
+    if (now - entry.windowStart > this.wsRateTtlMs) {
+      // Reset window
+      entry.windowStart = now;
+      entry.count = 1;
+      return true;
+    }
+    if (entry.count >= this.wsRateLimit) {
+      return false;
+    }
+    entry.count++;
+    return true;
   }
 
   private conversationRoom(id: string): string {
