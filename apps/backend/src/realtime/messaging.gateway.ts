@@ -36,9 +36,9 @@ export class MessagingGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   private readonly logger = new Logger(MessagingGateway.name);
-  private wsRateTtlMs = 60_000;
-  private wsRateLimit = 120;
-  private rateCounters = new Map<string, { windowStart: number; count: number }>();
+  private readonly wsRateTtlMs: number;
+  private readonly wsRateLimit: number;
+  private readonly rateCounters = new Map<string, { windowStart: number; count: number }>();
 
   @WebSocketServer() server!: Server;
 
@@ -49,11 +49,13 @@ export class MessagingGateway
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
   ) {
-    // Initialize WS rate limiting from validated env (numeric seconds + count)
-    const ttlSec = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
-    const limit = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
-    if (ttlSec && ttlSec > 0) this.wsRateTtlMs = ttlSec * 1000;
-    if (limit && limit > 0) this.wsRateLimit = limit;
+    // Initialize WS rate limiting deterministically (numeric seconds + count)
+    const ttlSecRaw = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
+    const limitRaw = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
+    const ttlSec = typeof ttlSecRaw === 'number' && ttlSecRaw > 0 ? ttlSecRaw : 60;
+    const limit = typeof limitRaw === 'number' && limitRaw > 0 ? limitRaw : 120;
+    this.wsRateTtlMs = ttlSec * 1000;
+    this.wsRateLimit = limit;
     if (process.env.NODE_ENV === 'test') {
       // eslint-disable-next-line no-console
       console.log(`[WS RATE] ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
