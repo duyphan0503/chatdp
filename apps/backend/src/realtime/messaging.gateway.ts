@@ -8,13 +8,19 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, UsePipes, ValidationPipe } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MessagesService } from '../messages/messages.service.js';
 import { PresenceRegistry } from './presence.registry.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AuthenticateDto } from './dto/authenticate.dto.js';
+import { ConversationJoinDto } from './dto/conversation-join.dto.js';
+import { ConversationLeaveDto } from './dto/conversation-leave.dto.js';
+import { TypingDto } from './dto/typing.dto.js';
+import { MessageNewDto } from './dto/message-new.dto.js';
+import { MessageReadDto } from './dto/message-read.dto.js';
 
 interface AccessPayload {
   sub: string; // userId
@@ -25,6 +31,7 @@ interface AccessPayload {
 
 @WebSocketGateway({ namespace: '/ws', cors: { origin: true, credentials: true } })
 @Injectable()
+@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class MessagingGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -42,11 +49,11 @@ export class MessagingGateway
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
   ) {
-    // Initialize WS rate limiting from env (Phase 5 hardening)
-    const ttlSec = parseInt(this.config.get<string>('WS_RATE_LIMIT_TTL') ?? '60', 10);
-    const limit = parseInt(this.config.get<string>('WS_RATE_LIMIT_LIMIT') ?? '120', 10);
-    if (!Number.isNaN(ttlSec) && ttlSec > 0) this.wsRateTtlMs = ttlSec * 1000;
-    if (!Number.isNaN(limit) && limit > 0) this.wsRateLimit = limit;
+    // Initialize WS rate limiting from validated env (numeric seconds + count)
+    const ttlSec = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
+    const limit = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
+    if (ttlSec && ttlSec > 0) this.wsRateTtlMs = ttlSec * 1000;
+    if (limit && limit > 0) this.wsRateLimit = limit;
   }
 
   afterInit(server: Server) {
@@ -60,29 +67,54 @@ export class MessagingGateway
 
   handleDisconnect(client: Socket) {
     const userId: string | undefined = client.data?.userId;
-    if (userId) {
-      const remaining = this.presence.remove(userId, client.id);
-      this.logger.debug(`Socket disconnected: ${client.id}; user ${userId} sockets left=${remaining}`);
+    if (!userId) return;
+    const remaining = this.presence.remove(userId, client.id);
+    this.logger.debug(`Socket disconnected: ${client.id}; user ${userId} sockets left=${remaining}`);
+    if (remaining === 0) {
+      // User fully offline; broadcast to all conversations they were part of
+      const { conversations } = this.presence.clearUser(userId);
+      for (const convId of conversations) {
+        const room = this.conversationRoom(convId);
+        this.server.to(room).emit('presence:offline', { userId });
+        this.server.to(room).emit('conversation:user_left', { conversationId: convId, userId });
+      }
     }
   }
 
   // Client -> Server: send JWT to establish an authenticated session
   @SubscribeMessage('authenticate')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   async handleAuthenticate(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { token: string },
+    @MessageBody() data: AuthenticateDto,
   ) {
     try {
-      const secret = this.config.get<string>('JWT_SECRET') ?? 'change_me';
+      const secret = this.config.get<string>('JWT_SECRET');
+      if (!secret) {
+        this.logger.error('JWT_SECRET is missing. Refusing authentication (fail-fast).');
+        client.emit('unauthorized', { error: 'server_misconfigured' });
+        client.disconnect(true);
+        return;
+      }
       const payload = await this.jwt.verifyAsync<AccessPayload>(data?.token, { secret });
       if (payload?.typ && payload.typ !== 'access') {
-        throw new UnauthorizedException('invalid token type');
+        this.logger.warn(`Authentication failed (invalid token type) for socket ${client.id}`);
+        client.emit('unauthorized', { error: 'invalid token' });
+        client.disconnect(true);
+        return;
       }
       client.data.userId = payload.sub;
       client.data.email = payload.email;
       client.join(this.userRoom(payload.sub));
       const count = this.presence.add(payload.sub, client.id);
       this.logger.debug(`Authenticated socket ${client.id} as user ${payload.sub}; online sockets=${count}`);
+      // On first online socket, emit presence:online to any rooms user has already joined (if any tracked)
+      if (count === 1) {
+        const joined = this.presence.getJoinedConversations(payload.sub);
+        for (const convId of joined) {
+          this.server.to(this.conversationRoom(convId)).emit('presence:online', { userId: payload.sub });
+        }
+      }
       client.emit('authenticated', { status: 'ok', userId: payload.sub });
     } catch (e) {
       this.logger.warn(`Authentication failed for socket ${client.id}: ${(e as Error).message}`);
@@ -95,7 +127,7 @@ export class MessagingGateway
   @SubscribeMessage('conversation:join')
   async handleJoinConversation(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string },
+    @MessageBody() payload: ConversationJoinDto,
   ) {
     this.ensureAuthed(client);
     const userId: string = client.data.userId;
@@ -110,18 +142,27 @@ export class MessagingGateway
       return;
     }
     await client.join(this.conversationRoom(convId));
+    this.presence.joinConversation(userId, convId);
+    // notify others in the room
+    this.server.to(this.conversationRoom(convId)).emit('conversation:user_joined', { conversationId: convId, userId });
+    // if this is the first socket for the user, let others know user is online
+    if (this.presence.getUserSocketIds(userId).length === 1) {
+      this.server.to(this.conversationRoom(convId)).emit('presence:online', { userId });
+    }
     client.emit('conversation:joined', { conversationId: convId });
   }
 
   @SubscribeMessage('conversation:leave')
   async handleLeaveConversation(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string },
+    @MessageBody() payload: ConversationLeaveDto,
   ) {
     this.ensureAuthed(client);
     const convId = payload?.conversationId;
     if (!convId) return;
     await client.leave(this.conversationRoom(convId));
+    this.presence.leaveConversation(client.data.userId, convId);
+    this.server.to(this.conversationRoom(convId)).emit('conversation:user_left', { conversationId: convId, userId: client.data.userId });
     client.emit('conversation:left', { conversationId: convId });
   }
 
@@ -129,7 +170,7 @@ export class MessagingGateway
   @SubscribeMessage('typing')
   async handleTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { conversationId: string; isTyping: boolean },
+    @MessageBody() payload: TypingDto,
   ) {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'typing')) {
@@ -150,12 +191,7 @@ export class MessagingGateway
   async handleMessageNew(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    payload: {
-      conversationId: string;
-      contentType: 'text' | 'image' | 'video' | 'file' | 'voice';
-      content?: string;
-      mediaUrl?: string;
-    },
+    payload: MessageNewDto,
   ) {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'message:new')) {
@@ -184,7 +220,7 @@ export class MessagingGateway
   @SubscribeMessage('message:read')
   async handleMessageRead(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { messageId: string },
+    @MessageBody() payload: MessageReadDto,
   ) {
     this.ensureAuthed(client);
     const userId: string = client.data.userId;

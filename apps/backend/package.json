@@ -17,7 +17,8 @@
     "prisma:format": "prisma format",
     "prisma:seed": "prisma db seed",
     "db:up": "docker compose -f docker/docker-compose.yml up -d",
-    "db:down": "docker compose -f docker/docker-compose.yml down -v"
+    "db:down": "docker compose -f docker/docker-compose.yml down -v",
+    "gen:jwt-secret": "node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
