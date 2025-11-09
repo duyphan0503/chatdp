@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { validate } from './env.validate.js';
 
-// For this project, we keep env files simple:
-// - .env.example is committed as a template
-// - .env is used locally for both development and tests
+// Giữ nguyên cơ chế chọn file .env
 function resolveEnvPaths(): string[] {
-  // Support both repo-root and app-root execution contexts
   return ['apps/backend/.env', '.env'];
 }
 
@@ -14,6 +12,8 @@ function resolveEnvPaths(): string[] {
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: resolveEnvPaths(),
+      // Fail-fast qua Zod schema
+      validate,
     }),
   ],
 })

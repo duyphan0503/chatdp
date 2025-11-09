@@ -11,5 +11,7 @@
     "^.+\\.ts$": ["ts-jest", { "useESM": true, "tsconfig": "<rootDir>/tsconfig.jest.json", "diagnostics": { "ignoreCodes": [151002] } }]
   },
   "extensionsToTreatAsEsm": [".ts"],
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "setupFiles": ["<rootDir>/test/setup-env.cjs"]
 }
+

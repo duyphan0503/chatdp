@@ -22,13 +22,13 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
     this.server = server;
   }
 
-  handleConnection(client: Socket) {
+  handleConnection(_client: Socket) {
     // TODO: rate limit connections and verify basic handshake constraints
   }
 
   // Client -> Server: send JWT to establish an authenticated session
   @SubscribeMessage('authenticate')
-  handleAuthenticate(@ConnectedSocket() client: Socket, @MessageBody() data: { token: string }) {
+  handleAuthenticate(@ConnectedSocket() client: Socket) {
     // TODO: verify JWT, extract userId, attach to socket.data
     // Example: client.data.userId = decoded.sub
     // Optionally, join user room: client.join(`user:${userId}`)

@@ -17,17 +17,23 @@ import { RefreshTokenRepository } from '../repositories/refresh-token.repository
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') ?? 'change_me',
-        signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? '15m',
-          algorithm: 'HS256',
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('Missing JWT_SECRET environment variable');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: config.get<string>('JWT_EXPIRES_IN') ?? '15m',
+            algorithm: 'HS256',
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserRepository, RefreshTokenRepository],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

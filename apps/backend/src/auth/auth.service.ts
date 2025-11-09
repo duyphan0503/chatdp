@@ -66,46 +66,57 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string, ctx?: RefreshContext): Promise<AuthTokens> {
+    const secret = this.config.get<string>('JWT_SECRET');
+    if (!secret) {
+      // Differentiate server misconfiguration clearly
+      throw new UnauthorizedException('server_misconfigured');
+    }
+
+    // Only the JWT verification is wrapped to normalize invalid token errors
+    let payload: { sub: string; jti: string; email?: string };
     try {
-      const secret = this.config.get<string>('JWT_SECRET') ?? 'change_me';
-      const payload = await this.jwt.verifyAsync<{ sub: string; jti: string; email?: string }>(
+      payload = await this.jwt.verifyAsync<{ sub: string; jti: string; email?: string }>(
         refreshToken,
         { secret },
       );
-
-      const user = await this.users.findById(payload.sub);
-      if (!user) throw new UnauthorizedException('Invalid token');
-
-      // Validate refresh token against DB (hashed)
-      const stored = await this.refreshTokens.findById(payload.jti);
-      if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      const valid = await argon2.verify(stored.tokenHash, refreshToken);
-      if (!valid) throw new UnauthorizedException('Invalid token');
-
-      // Enforce UA/IP binding when enabled and data available
-      this.enforceBinding(stored, ctx);
-
-      // Rotate: revoke old and issue new
-      await this.refreshTokens.revoke(stored.id);
-      return this.issueTokens(user, ctx);
     } catch {
       throw new UnauthorizedException('Invalid token');
     }
+
+    const user = await this.users.findById(payload.sub);
+    if (!user) throw new UnauthorizedException('Invalid token');
+
+    // Validate refresh token against DB (hashed)
+    const stored = await this.refreshTokens.findById(payload.jti);
+    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const valid = await argon2.verify(stored.tokenHash, refreshToken);
+    if (!valid) throw new UnauthorizedException('Invalid token');
+
+    // Enforce UA/IP binding when enabled and data available
+    this.enforceBinding(stored, ctx);
+
+    // Rotate: revoke old and issue new
+    await this.refreshTokens.revoke(stored.id);
+    return this.issueTokens(user, ctx);
   }
 
   async logout(refreshToken: string): Promise<void> {
+    const secret = this.config.get<string>('JWT_SECRET');
+    if (!secret) {
+      // Fail fast but do not leak internal configuration details beyond a predictable code path
+      throw new UnauthorizedException('server_misconfigured');
+    }
     try {
-      const secret = this.config.get<string>('JWT_SECRET') ?? 'change_me';
       const payload = await this.jwt.verifyAsync<{ jti: string }>(refreshToken, { secret });
       const stored = await this.refreshTokens.findById(payload.jti);
       if (stored && !stored.revokedAt) {
         await this.refreshTokens.revoke(stored.id);
       }
     } catch {
-      // ignore to make logout idempotent
+      // ignore to make logout idempotent and not reveal token validity
     }
   }
 
@@ -140,7 +151,10 @@ export class AuthService {
     });
 
     const refreshTtl = this.config.get<string>('REFRESH_TOKEN_TTL') ?? '7d';
-    const secret = this.config.get<string>('JWT_SECRET') ?? 'change_me';
+    const secret = this.config.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new UnauthorizedException('server_misconfigured');
+    }
 
     const jti = randomUUID();
     const refreshToken = await this.jwt.signAsync(
