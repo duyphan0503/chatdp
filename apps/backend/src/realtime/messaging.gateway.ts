@@ -21,6 +21,7 @@ import { ConversationLeaveDto } from './dto/conversation-leave.dto.js';
 import { TypingDto } from './dto/typing.dto.js';
 import { MessageNewDto } from './dto/message-new.dto.js';
 import { MessageReadDto } from './dto/message-read.dto.js';
+import { wsEventsTotal } from '../metrics/metrics.service.js';
 
 interface AccessPayload {
   sub: string; // userId
@@ -66,6 +67,7 @@ export class MessagingGateway
   handleConnection(client: Socket): void {
     // No-op until authenticate event
     this.logger.debug(`Socket connected: ${client.id}`);
+    this.incWs('connection');
   }
 
   handleDisconnect(client: Socket): void {
@@ -73,6 +75,7 @@ export class MessagingGateway
     if (!userId) return;
     const remaining = this.presence.remove(userId, client.id);
     this.logger.debug(`Socket disconnected: ${client.id}; user ${userId} sockets left=${remaining}`);
+    this.incWs('disconnect');
     if (remaining === 0) {
       // User fully offline; broadcast to all conversations they were part of
       const { conversations } = this.presence.clearUser(userId);
@@ -86,6 +89,7 @@ export class MessagingGateway
 
   // Client -> Server: send JWT to establish an authenticated session
   @SubscribeMessage('authenticate')
+  // metrics: authentication attempt
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   async handleAuthenticate(
     @ConnectedSocket() client: Socket,
@@ -99,6 +103,7 @@ export class MessagingGateway
         client.disconnect(true);
         return;
       }
+      this.incWs('authenticate');
       const payload = await this.jwt.verifyAsync<AccessPayload>(data?.token, { secret });
       if (payload?.typ && payload.typ !== 'access') {
         this.logger.warn(`Authentication failed (invalid token type) for socket ${client.id}`);
@@ -276,5 +281,14 @@ export class MessagingGateway
 
   private userRoom(id: string): string {
     return `user:${id}`;
+  }
+
+  // Metrics hook for WebSocket events
+  private incWs(event: string): void {
+    try {
+      wsEventsTotal.inc({ event } as any, 1);
+    } catch {
+      // ignore metrics errors
+    }
   }
 }

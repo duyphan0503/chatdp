@@ -2,11 +2,14 @@ import { INestApplication, Injectable, OnModuleDestroy, OnModuleInit } from '@ne
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env.schema.js';
+import { attachPrismaMetrics } from '../metrics/prisma.metrics.plugin.js';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly config: ConfigService<Env, true>) {
     super();
+    // Attach Prisma metrics middleware early
+    attachPrismaMetrics(this);
   }
 
   async onModuleInit() {
