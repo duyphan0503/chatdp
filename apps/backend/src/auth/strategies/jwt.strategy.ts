@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: (() => {
+      secretOrKey: ((): string => {
         const s = config.get<string>('JWT_SECRET');
         if (!s) {
           throw new Error('Missing JWT_SECRET');

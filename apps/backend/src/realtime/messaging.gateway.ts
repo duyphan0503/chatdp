@@ -52,8 +52,8 @@ export class MessagingGateway
     // Initialize WS rate limiting deterministically (numeric seconds + count)
     const ttlSecRaw = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
     const limitRaw = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
-    const ttlSec = typeof ttlSecRaw === 'number' && ttlSecRaw > 0 ? ttlSecRaw : 60;
-    const limit = typeof limitRaw === 'number' && limitRaw > 0 ? limitRaw : 120;
+    const ttlSec = ttlSecRaw > 0 ? ttlSecRaw : 60;
+    const limit = limitRaw > 0 ? limitRaw : 120;
     this.wsRateTtlMs = ttlSec * 1000;
     this.wsRateLimit = limit;
 

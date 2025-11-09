@@ -57,8 +57,10 @@ jobs:
             fi
           }
           ensure_var DATABASE_URL 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public' apps/backend/.env
-          ensure_var JWT_SECRET 'ci_secret' apps/backend/.env
-          ensure_var REFRESH_TOKEN_TTL '2m' apps/backend/.env
+          ensure_var JWT_SECRET 'ci_secret_1234567890_1234567890_abcdef' apps/backend/.env
+           ensure_var REFRESH_TOKEN_TTL '2m' apps/backend/.env
+          ensure_var WS_RATE_LIMIT_TTL '2' apps/backend/.env
+          ensure_var WS_RATE_LIMIT_LIMIT '2' apps/backend/.env
       - name: Migrate DB (deploy only)
         run: pnpm --filter @chatdp/backend prisma:migrate:deploy || echo "deploy skipped"
       - name: Prisma generate
