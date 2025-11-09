@@ -80,9 +80,22 @@ describe('RealtimeGateway (e2e)', () => {
     await authedAlice;
     await authedBob;
 
-    // 4) Join conversation room
+    // 4) Join conversation room sequentially to assert presence events
+    const aliceJoined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
     aliceSocket.emit('conversation:join', { conversationId: convId });
+    await aliceJoined;
+
+    // Alice listens for Bob's presence going online upon his join
+    const bobOnlineAtAlice = new Promise<{ userId: string }>((resolve) =>
+      aliceSocket.on('presence:online', (p: { userId: string }) => resolve(p)),
+    );
+
+    const bobJoined = new Promise<void>((resolve) => bobSocket.on('conversation:joined', () => resolve()));
     bobSocket.emit('conversation:join', { conversationId: convId });
+    await bobJoined;
+
+    const pOnline = await bobOnlineAtAlice;
+    expect(pOnline.userId).toBe(bobId);
 
     // 5) Bob listens for new message
     const gotMessage = new Promise<{ message: any }>((resolve) =>

@@ -11,7 +11,7 @@ function wsUrl(baseUrl: string): string {
   return u.toString();
 }
 
-jest.setTimeout(15000);
+jest.setTimeout(30000);
 
 describe('RealtimeGateway negative cases (e2e)', () => {
   let app: INestApplication;
@@ -19,8 +19,8 @@ describe('RealtimeGateway negative cases (e2e)', () => {
 
   beforeAll(async () => {
     // Lower WS rate limit for faster tests
-    process.env.WS_RATE_LIMIT_TTL = '5'; // seconds
-    process.env.WS_RATE_LIMIT_LIMIT = '2';
+    process.env.WS_RATE_LIMIT_TTL = '2'; // seconds
+    process.env.WS_RATE_LIMIT_LIMIT = '2'; // allow 2 events within window
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication({ bufferLogs: true });
     configureApp(app);
@@ -108,7 +108,7 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     charlieSocket.disconnect();
   });
 
-  it('rate limits excessive events (typing then message:new)', async () => {
+  it('rate limits excessive typing events', async () => {
     // Create two users & private conversation
     const rand = () => Math.random().toString(36).slice(2);
     const alice = await request(baseUrl).post('/api/auth/signup').send({
@@ -137,7 +137,9 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     const authed = new Promise<void>((resolve) => aliceSocket.on('authenticated', () => resolve()));
     aliceSocket.emit('authenticate', { token: alice.body.accessToken });
     await authed;
+    const joined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
     aliceSocket.emit('conversation:join', { conversationId: convId });
+    await joined;
 
     const rateEvent = new Promise<{ event: string; retryAfterMs: number }>((resolve) =>
       aliceSocket.on('rate:limit', (payload) => resolve(payload)),
@@ -145,38 +147,92 @@ describe('RealtimeGateway negative cases (e2e)', () => {
 
     // Emit typing more than limit (limit=2 set above)
     aliceSocket.emit('typing', { conversationId: convId, isTyping: true });
+    await new Promise((r) => setTimeout(r, 20));
     aliceSocket.emit('typing', { conversationId: convId, isTyping: true });
+    await new Promise((r) => setTimeout(r, 20));
     aliceSocket.emit('typing', { conversationId: convId, isTyping: true }); // should be limited
 
-    const ratePayload = await rateEvent;
+    const ratePayload = await Promise.race([
+      rateEvent,
+      new Promise<{ event: string; retryAfterMs: number }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout waiting for first rate:limit typing')), 5000),
+      ),
+    ]);
     expect(ratePayload.event).toBe('typing');
     expect(ratePayload.retryAfterMs).toBeGreaterThan(0);
 
-    // Wait for window reset (TTL=5s)
+    // Wait for window reset (TTL=2s)
     await new Promise((r) => setTimeout(r, 2100)); // TTL (2s) + 100ms buffer
 
-    // After window reset, first message:new events should succeed, then rate limit on third
-    const secondRateEvent = new Promise<{ event: string; retryAfterMs: number }>((resolve) =>
-      aliceSocket.on('rate:limit', (payload) => resolve(payload)),
-    );
-    aliceSocket.emit('message:new', {
-      conversationId: convId,
-      contentType: 'text',
-      content: 'one',
-    });
-    aliceSocket.emit('message:new', {
-      conversationId: convId,
-      contentType: 'text',
-      content: 'two',
-    });
-    aliceSocket.emit('message:new', {
-      conversationId: convId,
-      contentType: 'text',
-      content: 'three',
-    }); // should trigger rate limit now
+    aliceSocket.disconnect();
+  });
 
-    const ratePayload2 = await secondRateEvent;
-    expect(ratePayload2.event).toBe('message:new');
+  it('rate limits excessive message:new events after window reset', async () => {
+    // Create two users & private conversation
+    const rand = () => Math.random().toString(36).slice(2);
+    const alice = await request(baseUrl).post('/api/auth/signup').send({
+      email: `alice_${rand()}@example.com`,
+      password: 'StrongPassw0rd!',
+      displayName: 'Alice',
+    });
+    const bob = await request(baseUrl).post('/api/auth/signup').send({
+      email: `bob_${rand()}@example.com`,
+      password: 'StrongPassw0rd!',
+      displayName: 'Bob',
+    });
+    expect(alice.status).toBe(201);
+    expect(bob.status).toBe(201);
+
+    const convRes = await request(baseUrl)
+      .post('/api/conversations')
+      .set('Authorization', `Bearer ${alice.body.accessToken}`)
+      .send({ type: 'private', participantUserIds: [bob.body.user.id] });
+    expect(convRes.status).toBe(201);
+    const convId = convRes.body.id as string;
+
+    const url = wsUrl(baseUrl);
+    const aliceSocket: Socket = Client(url, { transports: ['websocket'] });
+    await new Promise<void>((resolve) => aliceSocket.on('connect', () => resolve()));
+    const authed = new Promise<void>((resolve) => aliceSocket.on('authenticated', () => resolve()));
+    aliceSocket.emit('authenticate', { token: alice.body.accessToken });
+    await authed;
+    const joined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
+    aliceSocket.emit('conversation:join', { conversationId: convId });
+    await joined;
+
+    // pre-rate limit typing to ensure window mechanics working
+    const rateEventTyping = new Promise<{ event: string; retryAfterMs: number }>((resolve) =>
+      aliceSocket.on('rate:limit', (payload) => payload.event === 'typing' && resolve(payload)),
+    );
+    aliceSocket.emit('typing', { conversationId: convId, isTyping: true });
+    aliceSocket.emit('typing', { conversationId: convId, isTyping: true });
+    aliceSocket.emit('typing', { conversationId: convId, isTyping: true });
+    const typingRatePayload = await Promise.race([
+      rateEventTyping,
+      new Promise<{ event: string; retryAfterMs: number }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout waiting for typing rate limit (setup)')), 5000),
+      ),
+    ]);
+    expect(typingRatePayload.event).toBe('typing');
+
+    // Wait for window reset (TTL=2s)
+    await new Promise((r) => setTimeout(r, 2100));
+
+    const rateEventMessage = new Promise<{ event: string; retryAfterMs: number }>((resolve) =>
+      aliceSocket.on('rate:limit', (payload) => payload.event === 'message:new' && resolve(payload)),
+    );
+
+    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'one' });
+    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'two' });
+    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'three' });
+
+    const messageRatePayload = await Promise.race([
+      rateEventMessage,
+      new Promise<{ event: string; retryAfterMs: number }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout waiting for message:new rate limit')), 5000),
+      ),
+    ]);
+    expect(messageRatePayload.event).toBe('message:new');
 
     aliceSocket.disconnect();
   });

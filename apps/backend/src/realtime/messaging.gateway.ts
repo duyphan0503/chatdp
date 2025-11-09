@@ -54,6 +54,10 @@ export class MessagingGateway
     const limit = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
     if (ttlSec && ttlSec > 0) this.wsRateTtlMs = ttlSec * 1000;
     if (limit && limit > 0) this.wsRateLimit = limit;
+    if (process.env.NODE_ENV === 'test') {
+      // eslint-disable-next-line no-console
+      console.log(`[WS RATE] ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
+    }
   }
 
   afterInit(server: Server) {
@@ -174,6 +178,7 @@ export class MessagingGateway
   ) {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'typing')) {
+      this.logger.debug(`Rate limit triggered for typing (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
       client.emit('rate:limit', { event: 'typing', retryAfterMs: this.wsRateTtlMs });
       return;
     }
@@ -195,6 +200,7 @@ export class MessagingGateway
   ) {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'message:new')) {
+      this.logger.debug(`Rate limit triggered for message:new (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
       client.emit('rate:limit', { event: 'message:new', retryAfterMs: this.wsRateTtlMs });
       return;
     }
