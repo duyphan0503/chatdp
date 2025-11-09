@@ -1,24 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
-
-function parseCorsOrigins(
-  envValue?: string,
-):
-  | string[]
-  | true
-  | RegExp
-  | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void) {
-  // Default to allow all in dev if not set, but recommend setting CORS_ORIGINS in production
-  if (!envValue) return true;
-  const raw = envValue
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (raw.length === 0) return true;
-  if (raw.includes('*')) return true;
-  return raw;
-}
+import type { Env } from './config/env.schema.js';
 
 // Narrowed types to avoid any-casts while accessing Express instance
 interface HttpAdapterLike {
@@ -42,20 +26,22 @@ function getExpressInstance(app: INestApplication): ExpressLike | null {
 }
 
 export function configureApp(app: INestApplication): void {
+  const config = app.get(ConfigService<Env, true>);
+
   // Security headers
   app.use(helmet());
 
-  // Trust proxy if explicitly enabled (for accurate client IP)
-  if ((process.env.TRUST_PROXY ?? '').toLowerCase() === 'true') {
+  // Trust proxy if enabled (for accurate client IP behind reverse proxy)
+  if (config.get('TRUST_PROXY', { infer: true })) {
     const express = getExpressInstance(app);
     if (express) {
       express.set('trust proxy', true);
     }
   }
 
-  // CORS allowlist from env (CSV or '*')
-  const corsOrigins = parseCorsOrigins(process.env.CORS_ORIGINS);
-  app.enableCors({ origin: corsOrigins, credentials: true });
+  // CORS allowlist from validated env (already transformed to string[] or ['*'])
+  const corsOrigins = config.get('CORS_ORIGINS', { infer: true });
+  app.enableCors({ origin: corsOrigins.includes('*') ? true : corsOrigins, credentials: true });
 
   // Global validation
   app.useGlobalPipes(

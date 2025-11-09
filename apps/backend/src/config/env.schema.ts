@@ -43,12 +43,23 @@ export const envSchema = z.object({
         .filter(Boolean);
     }),
 
+  // HTTP rate limiting (seconds + count)
+  RATE_LIMIT_TTL: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_LIMIT: z.coerce.number().int().positive().default(100),
+
+  // Auth-specific rate limiting
+  RATE_LIMIT_AUTH_TTL: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_AUTH_LIMIT: z.coerce.number().int().positive().default(5),
+
   // WS rate limiting (seconds + count)
   WS_RATE_LIMIT_TTL: z.coerce.number().int().positive().default(60),
   WS_RATE_LIMIT_LIMIT: z.coerce.number().int().positive().default(120),
 
   // Logging level
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  // Trust proxy (for correct client IP behind reverse proxies)
+  TRUST_PROXY: z.coerce.boolean().default(false),
 
   // Optional URL ví dụ thêm
   FRONTEND_URL: z.string().url().optional(),

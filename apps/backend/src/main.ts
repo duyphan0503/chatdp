@@ -2,14 +2,15 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { configureApp } from './bootstrap.js';
+import { ConfigService } from '@nestjs/config';
+import type { Env } from './config/env.schema.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   configureApp(app);
 
-  const envPort = process.env.PORT;
-  const parsed = envPort !== undefined ? Number(envPort) : NaN;
-  const port = Number.isFinite(parsed) ? parsed : 3000;
+  const config = app.get(ConfigService<Env, true>);
+  const port = config.get('PORT', { infer: true });
   await app.listen(port);
 
   const logger = new Logger('Bootstrap');

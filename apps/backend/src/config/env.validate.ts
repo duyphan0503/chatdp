@@ -11,7 +11,10 @@ export function validate(raw: Record<string, unknown>): Env {
     // format() cho cây lỗi đầy đủ
     const formatted = parsed.error.format();
     // eslint-disable-next-line no-console
-    console.error('[ENV] Validation failed. Structured errors:\n', JSON.stringify(formatted, null, 2));
+    console.error(
+        '[ENV] Validation failed. Structured errors:\n',
+        JSON.stringify(formatted, null, 2),
+      );
     // Flat list giúp đọc nhanh
     // eslint-disable-next-line no-console
     console.error('[ENV] Issues:');
