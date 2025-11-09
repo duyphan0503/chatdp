@@ -56,22 +56,19 @@ export class MessagingGateway
     const limit = typeof limitRaw === 'number' && limitRaw > 0 ? limitRaw : 120;
     this.wsRateTtlMs = ttlSec * 1000;
     this.wsRateLimit = limit;
-    if (process.env.NODE_ENV === 'test') {
-      // eslint-disable-next-line no-console
-      console.log(`[WS RATE] ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
-    }
+
   }
 
-  afterInit(server: Server) {
+  afterInit(server: Server): void {
     this.server = server;
   }
 
-  handleConnection(client: Socket) {
+  handleConnection(client: Socket): void {
     // No-op until authenticate event
     this.logger.debug(`Socket connected: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket): void {
     const userId: string | undefined = client.data?.userId;
     if (!userId) return;
     const remaining = this.presence.remove(userId, client.id);
@@ -93,7 +90,7 @@ export class MessagingGateway
   async handleAuthenticate(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: AuthenticateDto,
-  ) {
+  ): Promise<void> {
     try {
       const secret = this.config.get<string>('JWT_SECRET');
       if (!secret) {
@@ -134,7 +131,7 @@ export class MessagingGateway
   async handleJoinConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: ConversationJoinDto,
-  ) {
+  ): Promise<void> {
     this.ensureAuthed(client);
     const userId: string = client.data.userId;
     const convId = payload?.conversationId;
@@ -162,7 +159,7 @@ export class MessagingGateway
   async handleLeaveConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: ConversationLeaveDto,
-  ) {
+  ): Promise<void> {
     this.ensureAuthed(client);
     const convId = payload?.conversationId;
     if (!convId) return;
@@ -177,7 +174,7 @@ export class MessagingGateway
   async handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: TypingDto,
-  ) {
+  ): Promise<void> {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'typing')) {
       this.logger.debug(`Rate limit triggered for typing (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
@@ -199,7 +196,7 @@ export class MessagingGateway
     @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: MessageNewDto,
-  ) {
+  ): Promise<void> {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'message:new')) {
       this.logger.debug(`Rate limit triggered for message:new (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
@@ -229,7 +226,7 @@ export class MessagingGateway
   async handleMessageRead(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MessageReadDto,
-  ) {
+  ): Promise<void> {
     this.ensureAuthed(client);
     const userId: string = client.data.userId;
     const { messageId } = payload ?? ({} as any);
