@@ -26,7 +26,9 @@ export class HttpMetricsMiddleware implements NestMiddleware {
         const end = process.hrtime.bigint();
         const durationNs = Number(end - start);
         const durationSec = durationNs / 1e9;
-        const route = req.path ?? 'unknown';
+        // Prefer the registered route pattern (reduces label cardinality vs raw URL with params)
+        const r = (req as Partial<{ route: { path?: string } }>).route;
+        const route = (r && typeof r.path === 'string' && r.path) || req.path || 'unknown';
         const method = req.method;
         const statusCode = String(res.statusCode);
         httpRequestDurationSeconds.labels(method, route, statusCode).observe(durationSec);

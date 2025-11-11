@@ -274,9 +274,35 @@ Tiến độ: ĐÃ HOÀN THÀNH (baseline)
 - Rate limiting WS, chống spam, backpressure cơ bản; room theo conversationId
 
 6) Phase 6 — Observability & Ops
-- Logging có cấu trúc, correlationId
-- Metrics Prometheus: HTTP, WS, DB latency/throughput
-- /metrics, /healthz nâng cao (readiness/liveness)
+- Logging có cấu trúc, correlationId (CorrelatedLogger prefix: [cid=...]) với mức LOG_LEVEL qua env
+- Metrics Prometheus: HTTP, WS, DB latency/throughput (prom-client)
+- Endpoints:
+  - /api/healthz (liveness cơ bản)
+  - /api/ready (readiness: kiểm tra DB Prisma)
+  - /api/metrics (Prometheus exposition)
+- Cardinality control: HTTP metrics dùng pattern route (req.route?.path) thay vì raw URL
+- Biến môi trường mới: LOG_LEVEL
+
+Metric inventory (labels trong ngoặc vuông):
+- http_requests_total [method, route, status]
+- http_request_duration_seconds (Histogram) [method, route, status]
+- http_requests_in_flight (Gauge) []
+- prisma_query_duration_seconds (Histogram) [model, action, status]
+- prisma_queries_total (Counter) [model, action, status]
+- ws_events_total (Counter) [event]
+
+Readiness logic:
+- /api/ready trả 200 khi Prisma query đơn giản (SELECT 1) thành công; 503 nếu thất bại
+
+Logging:
+- Mỗi request được gán correlationId (header X-Correlation-Id hoặc tự sinh UUID v4)
+- Logger JSON-like line trong production (tùy chỉnh ở phase sau) hiện tại prefix text với cid để đơn giản hoá grep
+
+Follow-up (Hardening Phase 7):
+- Thêm rate limit và circuit-breaker cho /metrics nếu cần
+- Thêm sampling hoặc structured logger JSON hoàn chỉnh
+- Tối ưu thêm DB metrics (pool saturation, slow query > threshold)
+
 
 7) Phase 7 — Hardening & Performance
 - Request size limits, upload constraints
