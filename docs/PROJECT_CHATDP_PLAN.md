@@ -284,10 +284,10 @@ Tiến độ: ĐÃ HOÀN THÀNH (baseline)
 - Biến môi trường mới: LOG_LEVEL
 
 Metric inventory (labels trong ngoặc vuông):
-- http_requests_total [method, route, status]
-- http_request_duration_seconds (Histogram) [method, route, status]
+- http_requests_total [method, route, status_code]
+- http_request_duration_seconds (Histogram) [method, route, status_code]
 - http_requests_in_flight (Gauge) []
-- prisma_query_duration_seconds (Histogram) [model, action, status]
+- prisma_query_duration_seconds (Histogram) [model, action]
 - prisma_queries_total (Counter) [model, action, status]
 - ws_events_total (Counter) [event]
 
