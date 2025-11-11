@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
-import { prismaQueryDurationSeconds } from './metrics.service.js';
+import { prismaQueryDurationSeconds, prismaQueriesTotal } from './metrics.service.js';
 
 // Attach middleware to measure Prisma query durations.
 export function attachPrismaMetrics(client: PrismaClient): void {
@@ -18,14 +18,16 @@ export function attachPrismaMetrics(client: PrismaClient): void {
         const model = params.model ?? 'raw';
         const action = String(params.action);
         prismaQueryDurationSeconds.labels(model, action).observe(durationSec);
+        prismaQueriesTotal.labels(model, action, 'ok').inc(1);
         return result;
       } catch (e) {
         const end = process.hrtime.bigint();
         const durationNs = Number(end - start);
         const durationSec = durationNs / 1e9;
-        prismaQueryDurationSeconds
-          .labels(params.model ?? 'raw', String(params.action))
-          .observe(durationSec);
+        const model = params.model ?? 'raw';
+        const action = String(params.action);
+        prismaQueryDurationSeconds.labels(model, action).observe(durationSec);
+        prismaQueriesTotal.labels(model, action, 'error').inc(1);
         throw e;
       }
     },

@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import type { INestApplication, LogLevel } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
@@ -34,6 +34,18 @@ export function configureApp(app: INestApplication): void {
 
   // Security headers
   app.use(helmet());
+
+  // Configure log levels from env LOG_LEVEL
+  const level = config.get('LOG_LEVEL', { infer: true });
+  const levelsByMin: Record<Env['LOG_LEVEL'], LogLevel[]> = {
+    fatal: ['error'],
+    error: ['error'],
+    warn: ['warn', 'error'],
+    info: ['log', 'warn', 'error'],
+    debug: ['debug', 'log', 'warn', 'error'],
+    trace: ['verbose', 'debug', 'log', 'warn', 'error'],
+  };
+  app.useLogger(levelsByMin[level] ?? ['log', 'warn', 'error']);
 
   // Trust proxy if enabled (for accurate client IP behind reverse proxy)
   if (config.get('TRUST_PROXY', { infer: true })) {

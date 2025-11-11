@@ -286,7 +286,7 @@ export class MessagingGateway
   // Metrics hook for WebSocket events
   private incWs(event: string): void {
     try {
-      wsEventsTotal.inc({ event } as any, 1);
+      wsEventsTotal.labels(event).inc(1);
     } catch {
       // ignore metrics errors
     }

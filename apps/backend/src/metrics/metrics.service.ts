@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Registry, collectDefaultMetrics, Counter, Histogram } from 'prom-client';
+import { Registry, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
 
 // Single registry for the application
 export const metricsRegistry = new Registry();
@@ -22,6 +22,13 @@ export const httpRequestsTotal = new Counter({
 });
 metricsRegistry.registerMetric(httpRequestsTotal);
 
+// HTTP in-flight gauge
+export const httpRequestsInFlight = new Gauge({
+  name: 'http_requests_in_flight',
+  help: 'Number of HTTP requests currently being processed',
+});
+metricsRegistry.registerMetric(httpRequestsInFlight);
+
 // WebSocket events counter
 export const wsEventsTotal = new Counter({
   name: 'ws_events_total',
@@ -38,6 +45,14 @@ export const prismaQueryDurationSeconds = new Histogram({
   buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
 });
 metricsRegistry.registerMetric(prismaQueryDurationSeconds);
+
+// Prisma queries total counter
+export const prismaQueriesTotal = new Counter({
+  name: 'prisma_queries_total',
+  help: 'Total number of Prisma queries',
+  labelNames: ['model', 'action', 'status'],
+});
+metricsRegistry.registerMetric(prismaQueriesTotal);
 
 @Injectable()
 export class MetricsService {
