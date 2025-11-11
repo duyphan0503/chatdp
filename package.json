@@ -1,6 +1,7 @@
 {
   "name": "chatdp-monorepo",
   "private": true,
+  "packageManager": "pnpm@10.20.0",
   "workspaces": [
     "apps/backend",
     "packages/*"
@@ -10,6 +11,15 @@
     "build:backend": "pnpm --filter @chatdp/backend build",
     "lint:backend": "pnpm --filter @chatdp/backend lint",
     "test:backend": "pnpm --filter @chatdp/backend test",
+    "lint": "turbo run lint",
+    "build": "turbo run build",
+    "test": "turbo run test",
     "ci": "echo Run CI locally via turbo or gh"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^2.11.0",
+    "@types/passport-jwt": "^4.0.1",
+    "date-fns": "^4.1.0",
+    "turbo": "^2.6.0"
   }
 }

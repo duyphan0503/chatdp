@@ -1,9 +1,17 @@
 {
+  "preset": "ts-jest/presets/default-esm",
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "..",
+  "moduleNameMapper": {
+    "^uuid$": "uuid",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
+  },
   "testRegex": ".*\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.ts$": ["ts-jest", { "useESM": true, "tsconfig": "<rootDir>/tsconfig.jest.json", "diagnostics": { "ignoreCodes": [151002] } }]
   },
-  "testEnvironment": "node"
+  "extensionsToTreatAsEsm": [".ts"],
+  "testEnvironment": "node",
+  "setupFiles": ["<rootDir>/test/setup-env.cjs"]
 }
+

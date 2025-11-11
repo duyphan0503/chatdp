@@ -130,33 +130,37 @@ Nest.js đã có cấu trúc module mạnh mẽ, chúng ta sẽ tổ chức nó 
 * `/conversations/:id/messages` (GET) - Lấy lịch sử tin nhắn (phân trang).
 * `/media/upload` (POST) - Tải lên ảnh/video, trả về URL.
 
-### 5.2. WebSocket Events (Nest.js Gateway)
+### 5.2. WebSocket Events (Phase 5 Implemented)
 
-WebSocket sẽ xử lý các hành động real-time.
+Các sự kiện hiện đang được triển khai trong Phase 5 (Messaging realtime). Những sự kiện liên quan tới cuộc gọi (`call:*`) sẽ được thêm ở Phase 8.
 
-**Client gửi lên (Emit):**
+**Client emit (đang dùng):**
 
-* `authenticate` (Gửi JWT token để xác thực WebSocket session).
-* `message:send` (Gửi tin nhắn mới - text, media).
-* `message:typing:start` (Bắt đầu gõ).
-* `message:typing:stop` (Ngừng gõ).
-* `message:read` (Báo đã đọc tin nhắn).
-* `call:initiate` (Bắt đầu cuộc gọi - gửi thông tin *signaling* cho WebRTC).
-* `call:accept` (Chấp nhận cuộc gọi).
-* `call:reject` (Từ chối cuộc gọi).
-* `call:ice_candidate` (Gửi ICE candidate cho WebRTC).
+* `authenticate`  Gửi JWT access token để xác thực phiên WS.
+* `conversation:join`  Tham gia room của 1 conversation (chỉ khi là participant).
+* `conversation:leave`  Rời conversation room.
+* `typing`  Gửi trạng thái đang gõ.
+* `message:new`  Tạo tin nhắn mới (text/media) và broadcast tới conversation.
+* `message:read`  Đánh dấu một tin nhắn là đã đọc.
 
-**Server gửi xuống (Listen):**
+**Server emit (đang dùng):**
 
-* `message:new` (Nhận tin nhắn mới).
-* `message:typing:notify` (Thông báo có người đang gõ).
-* `message:status:update` (Cập nhật trạng thái tin nhắn - đã nhận, đã đọc).
-* `user:status:update` (Cập nhật trạng thái online/offline).
-* `call:incoming` (Nhận cuộc gọi đến).
-* `call:accepted` (Cuộc gọi được chấp nhận).
-* `call:rejected` (Cuộc gọi bị từ chối).
-* `call:ice_candidate` (Nhận ICE candidate từ đối phương).
-* `exception` (Thông báo lỗi, ví dụ: không thể gửi tin).
+* `authenticated`  Xác thực thành công.
+* `unauthorized`  Token không hợp lệ (socket sẽ bị đóng).
+* `conversation:joined` / `conversation:left`  Phản hồi join/leave.
+* `typing`  Có participant đang gõ (fan-out tới room, trừ sender).
+* `message:new`  Tin nhắn mới vừa được tạo.
+* `message:read`  Một participant đã đọc tin nhắn.
+* `rate:limit`  Bị giới hạn tốc độ gửi sự kiện (spam control).
+* `error`  Lỗi nghiệp vụ (ví dụ: không phải participant, gửi message thất bại).
+
+**Rate limiting (in-memory tạm thời):**
+- Biến môi trường: `WS_RATE_LIMIT_TTL` (s), `WS_RATE_LIMIT_LIMIT` (số sự kiện/window) áp dụng cho `typing` và `message:new`.
+- Triển khai hiện tại: in-memory Map (per instance). Triển khai phân tán (Redis) sẽ thực hiện ở Phase 7 (Hardening).
+
+**Sự kiện dự kiến ở các phase sau:**
+- Phase 8 (Calls): `call:initiate`, `call:accept`, `call:reject`, `call:ice_candidate`.
+- Presence nâng cao / user status broadcast sẽ được chuẩn hoá thêm (`user:status:update`).
 
 ---
 
@@ -223,3 +227,196 @@ Mục tiêu: Đánh bóng ứng dụng và thêm các tính năng giữ chân ng
 ### Giai đoạn 5: Mở rộng (Tương lai)
 * Cuộc gọi video nhóm.
 * Mã hóa đầu cuối (E2EE).
+
+---
+
+## Phụ lục: Phân rã Phase Backend chi tiết
+
+Phần này cụ thể hoá lộ trình ở trên thành các phase triển khai nhỏ, dễ quản lý PR và CI. Các phase tuần tự hoặc có thể song song một phần, tuỳ ưu tiên.
+
+1) Phase 1 — Security Baseline
+- ConfigModule.forRoot({ isGlobal: true })
+- ThrottlerModule.forRoot + global ThrottlerGuard
+- ValidationPipe({ whitelist: true, transform: true }), Helmet, CORS allowlist qua env (CSV hoặc "*")
+- Global prefix: /api; endpoint GET /api/healthz
+- CI: lint, unit, e2e cơ bản; .env.example
+
+2) Phase 2 — Schema & Persistence
+- Postgres + Prisma init; DATABASE_URL; generate/migrate
+- Bảng: users, conversations, participants, messages, message_status; indexes cơ bản
+- Seed tối thiểu; repository/service base
+
+Tiến độ: ĐÃ HOÀN THÀNH (baseline)
+- Prisma schema + migration đã có, repositories + unit tests đã xanh.
+- Docker compose Postgres dev: `pnpm --filter @chatdp/backend db:up`
+- Prisma generate/migrate/seed:
+  - `pnpm --filter @chatdp/backend prisma:generate`
+  - `pnpm --filter @chatdp/backend prisma:migrate:dev`
+  - `pnpm --filter @chatdp/backend prisma:seed`
+- Env mẫu & chiến lược ENV 2-file:
+  - Committed: `apps/backend/.env.example` (template, push lên git)
+  - Local dev & test: `apps/backend/.env` (dùng chung cho development và test)
+  - CI/Prod: thiết lập biến môi trường qua CI/hosting, KHÔNG commit file `.env`
+
+3) Phase 3 — AuthN/Z (JWT + RBAC)
+- Hash mật khẩu (argon2/bcrypt), JWT access + refresh (rotation, TTL)
+- Guards: JwtAuthGuard, RolesGuard; rate limit riêng cho auth
+- E2E: signup/login/refresh; bảo vệ route /me
+
+4) Phase 4 — Messaging Core (REST)
+- Conversations CRUD, join/list
+- Messages create/list (pagination, desc by createdAt), read receipts
+- DTO validation đầy đủ; chống N+1; OpenAPI mô tả endpoint
+
+5) Phase 5 — Realtime/WebSocket
+- WS Gateway (auth handshake bằng JWT)
+- Sự kiện: message:new, message:read, typing, presence tối thiểu
+- Rate limiting WS, chống spam, backpressure cơ bản; room theo conversationId
+
+6) Phase 6 — Observability & Ops
+- Logging có cấu trúc, correlationId (CorrelatedLogger prefix: [cid=...]) với mức LOG_LEVEL qua env
+- Metrics Prometheus: HTTP, WS, DB latency/throughput (prom-client)
+- Endpoints:
+  - /api/healthz (liveness cơ bản)
+  - /api/ready (readiness: kiểm tra DB Prisma)
+  - /api/metrics (Prometheus exposition)
+- Cardinality control: HTTP metrics dùng pattern route (req.route?.path) thay vì raw URL
+- Biến môi trường mới: LOG_LEVEL
+
+Metric inventory (labels trong ngoặc vuông):
+- http_requests_total [method, route, status]
+- http_request_duration_seconds (Histogram) [method, route, status]
+- http_requests_in_flight (Gauge) []
+- prisma_query_duration_seconds (Histogram) [model, action, status]
+- prisma_queries_total (Counter) [model, action, status]
+- ws_events_total (Counter) [event]
+
+Readiness logic:
+- /api/ready trả 200 khi Prisma query đơn giản (SELECT 1) thành công; 503 nếu thất bại
+
+Logging:
+- Mỗi request được gán correlationId (header X-Correlation-Id hoặc tự sinh UUID v4)
+- Logger JSON-like line trong production (tùy chỉnh ở phase sau) hiện tại prefix text với cid để đơn giản hoá grep
+
+Follow-up (Hardening Phase 7):
+- Thêm rate limit và circuit-breaker cho /metrics nếu cần
+- Thêm sampling hoặc structured logger JSON hoàn chỉnh
+- Tối ưu thêm DB metrics (pool saturation, slow query > threshold)
+
+
+7) Phase 7 — Hardening & Performance
+- Request size limits, upload constraints
+- Redis cache cho truy vấn nóng; tối ưu truy vấn + index
+- Pen-test checklist, lỗi nhất quán không lộ nội bộ
+
+8) Phase 8 — Calls Signaling (WebRTC)
+- WebSocket events: call:initiate, call:accept, call:reject, call:ice_candidate
+- JWT auth cho WS signaling; mapping theo userId/conversationId
+- Push Notifications (FCM/APNS) cho cuộc gọi đến; trạng thái cuộc gọi cơ bản
+
+9) Phase 9 — Media & Groups Enhancements
+- Upload media (S3/MinIO presigned URLs); metadata DB
+- Messages nâng cao: reactions, reply/quote, delete/recall
+- Nhóm: vai trò admin/member, avatar/tên, quản trị cơ bản
+- Seek pagination cho messages
+
+10) Phase 10 — Search/Indexing (tuỳ nhu cầu)
+- PostgreSQL Full-Text Search hoặc OpenSearch/Elasticsearch
+- Index/search API đồng bộ AuthZ
+
+Tùy chọn: Polyglot Persistence (MongoDB Read Model)
+- Mục tiêu: tăng tốc độ đọc timeline tin nhắn dưới tải cao, giữ Postgres là source of truth
+- Outbox Pattern trong Postgres cho sự kiện messages; projector/worker sync sang Mongo (idempotent, retry, dead-letter)
+- Repository phân tách: Write (Postgres) / Read (Mongo)
+- Index Mongo gợi ý: { conversation_id: 1, created_at: -1 }, { sender_id: 1, created_at: -1 }
+- Observability: metrics độ trễ projector, backlog outbox; alert khi vượt ngưỡng
+- Env: MONGODB_URI, MONGODB_DBNAME
+
+---
+
+## Phụ lục A: Chiến lược ENV (2-file)
+
+Đơn giản hoá để phù hợp team 1-dev:
+- Chỉ dùng 2 file cho backend
+  - `.env.example`: file hướng dẫn (được commit)
+  - `.env`: file local dùng cho cả development và test
+- NestJS ConfigModule (EnvConfigModule) nạp theo thứ tự: `apps/backend/.env` → `.env`.
+- Không sử dụng `.env.test`. Test runner cũng đọc `.env`.
+- .gitignore đã chặn `.env` / `.env.*` toàn repo.
+
+Khuyến nghị:
+- Với CI/Prod: dùng biến môi trường runtime (secrets/vars), không đưa `.env` lên repo.
+- Nếu cần khác biệt giữa dev/test, có thể override tạm thời bằng cách export env trước khi chạy lệnh (ví dụ: `JWT_SECRET=... pnpm test:backend`).
+
+## Phụ lục B: Refresh Token Binding (UA/IP) & Proxy Awareness
+
+Mục tiêu: Nâng cao bảo mật cho quá trình refresh token bằng cách ràng buộc (bind) refresh token với thiết bị/phiên bản client (User-Agent) và/hoặc địa chỉ IP nguồn. Đồng thời cấu hình server hoạt động đúng phía sau reverse proxy (Nginx/ALB/Cloudflare).
+
+### Cách hoạt động
+- Khi signup/login, server phát hành access token + refresh token, đồng thời lưu `userAgent` và `ip` (nếu có) kèm refresh token trong DB.
+- Khi gọi `/auth/refresh`, nếu bật binding, server sẽ kiểm tra `User-Agent` và/hoặc `IP` từ request có khớp với giá trị đã lưu cùng refresh token hay không. Không khớp → 401.
+
+### Biến môi trường
+- `REFRESH_BIND_UA_IP` (mặc định: `true`): Bật binding cả UA và IP.
+- `REFRESH_BIND_UA`, `REFRESH_BIND_IP`: Tuỳ chọn chi tiết. Nếu không đặt, hai biến này kế thừa giá trị từ `REFRESH_BIND_UA_IP`.
+- `TRUST_PROXY` (mặc định: `false`): Khi `true`, Express sẽ tin cậy header `X-Forwarded-For` để xác định IP client thực (phải cấu hình proxy đúng chuẩn).
+
+Ví dụ `.env` (backend):
+```
+# Binding
+REFRESH_BIND_UA_IP=true
+# REFRESH_BIND_UA=true
+# REFRESH_BIND_IP=true
+
+# Proxy
+TRUST_PROXY=true  # BẬT trong môi trường có reverse proxy
+```
+
+### Khuyến nghị (phương án tối ưu)
+- Giữ `REFRESH_BIND_UA_IP=true` trong production để tăng bảo mật; nếu có vấn đề IP thay đổi thường xuyên (mạng di động/NAT), có thể tách:
+  - `REFRESH_BIND_UA=true` và `REFRESH_BIND_IP=false` để chỉ bind theo `User-Agent`.
+- Trong môi trường production phía sau reverse proxy (Nginx/ALB/Cloudflare): BẬT `TRUST_PROXY=true` và cấu hình proxy truyền đúng IP client qua `X-Forwarded-For`.
+- Trong môi trường local/dev không có proxy: ĐỂ `TRUST_PROXY=false`.
+
+### Cấu hình Nginx mẫu
+```
+# Nginx ở trước ứng dụng NestJS
+# Thiết lập IP thực từ mạng nội bộ/LB (chỉnh lại CIDR theo hạ tầng của bạn)
+set_real_ip_from 10.0.0.0/8;
+set_real_ip_from 172.16.0.0/12;
+set_real_ip_from 192.168.0.0/16;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+server {
+  listen 80;
+  server_name your.domain;
+
+  location / {
+    proxy_pass http://backend:3000; # container/service NestJS
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+}
+```
+
+### Cloudflare (khuyến nghị cho bạn)
+- BẬT `TRUST_PROXY=true` trong backend.
+- Cloudflare sẽ gửi IP client thật qua `CF-Connecting-IP`; code đã ưu tiên đọc `cf-connecting-ip` và `true-client-ip`, sau đó mới `x-forwarded-for`.
+- Bật “Authenticated Origin Pulls” nếu có thể, và giới hạn firewall/chỉ chấp nhận traffic từ dải IP Cloudflare đến origin.
+- Tại Cloudflare:
+  - SSL/TLS mode: Full (strict) nếu có chứng chỉ hợp lệ ở origin.
+  - Transform Rules/Rulesets: không ghi đè `User-Agent`, bảo toàn header.
+  - Ensure Brotli/Compression không ảnh hưởng header; HTTP/2/3 OK.
+- Trên origin (Nginx nếu có): không cần sửa đặc biệt; chỉ cần pass-through, không ghi đè IP.
+
+Lưu ý:
+- Chỉ bật `TRUST_PROXY=true` khi bạn kiểm soát reverse proxy/CDN và đã cấu hình forwarding đúng. Nếu không, header `X-Forwarded-For` có thể bị giả mạo.
+- OpenAPI đã mô tả rằng `/auth/refresh` có thể yêu cầu giữ nguyên `User-Agent` và IP theo cấu hình server.
+
+### Ảnh hưởng phía Client
+- Client cần giữ nguyên `User-Agent` giữa các lần gọi `refresh` (mặc định UA/IP đều được bind). Trên mobile, UA thường ổn định; trên web, tránh thay đổi UA tùy ý.
+- Khi có proxy/CDN, bảo đảm chúng bảo tồn header `User-Agent` và truyền `X-Forwarded-For` đúng IP client.

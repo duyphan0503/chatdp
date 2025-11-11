@@ -1,9 +1,144 @@
-// datasource and generator will be filled later
-// Example:
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
-// generator client {
-//   provider = "prisma-client-js"
-// }
+// Phase 2 — Prisma schema for chatdp
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  phoneNumber  String?  @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messages       Message[]
+  participants   Participant[]
+  friendshipsOne Friendship[]    @relation("userOne")
+  friendshipsTwo Friendship[]    @relation("userTwo")
+  MessageStatus  MessageStatus[]
+  refreshTokens  RefreshToken[]
+
+  @@index([displayName])
+}
+
+model Conversation {
+  id             String           @id @default(uuid())
+  type           ConversationType
+  groupName      String?
+  groupAvatarUrl String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  participants Participant[]
+  messages     Message[]
+}
+
+enum ConversationType {
+  private
+  group
+}
+
+model Participant {
+  userId         String
+  conversationId String
+  joinedAt       DateTime        @default(now())
+  role           ParticipantRole @default(member)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, conversationId])
+  @@index([conversationId])
+}
+
+enum ParticipantRole {
+  admin
+  member
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  senderId       String
+  contentType    ContentType
+  content        String?
+  mediaUrl       String?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  statuses     MessageStatus[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+enum ContentType {
+  text
+  image
+  video
+  file
+  voice
+}
+
+model MessageStatus {
+  messageId String
+  userId    String
+  status    DeliveryStatus
+  readAt    DateTime?
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId])
+}
+
+enum DeliveryStatus {
+  delivered
+  read
+}
+
+model Friendship {
+  userOneId    String
+  userTwoId    String
+  status       FriendshipStatus
+  actionUserId String
+
+  userOne User @relation("userOne", fields: [userOneId], references: [id], onDelete: Cascade)
+  userTwo User @relation("userTwo", fields: [userTwoId], references: [id], onDelete: Cascade)
+
+  @@id([userOneId, userTwoId])
+  @@index([status])
+}
+
+enum FriendshipStatus {
+  pending
+  accepted
+  blocked
+}
+
+// Phase 3 — Auth: DB-backed refresh tokens (scaffold)
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
