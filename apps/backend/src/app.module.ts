@@ -14,7 +14,7 @@ import type { Env } from './config/env.schema.js';
 import { MetricsModule } from './metrics/metrics.module.js';
 import { MetricsController } from './metrics/metrics.controller.js';
 import { LoggerModule } from './logging/logger.module.js';
- 
+
 @Module({
   imports: [
     // Load environment variables and make ConfigService globally available
@@ -56,4 +56,3 @@ import { LoggerModule } from './logging/logger.module.js';
   ],
 })
 export class AppModule {}
-

@@ -10,7 +10,7 @@ export const httpRequestDurationSeconds = new Histogram({
   name: 'http_request_duration_seconds',
   help: 'HTTP request duration in seconds',
   labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5]
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5],
 });
 metricsRegistry.registerMetric(httpRequestDurationSeconds);
 
@@ -26,7 +26,7 @@ metricsRegistry.registerMetric(httpRequestsTotal);
 export const wsEventsTotal = new Counter({
   name: 'ws_events_total',
   help: 'Total WebSocket events handled',
-  labelNames: ['event']
+  labelNames: ['event'],
 });
 metricsRegistry.registerMetric(wsEventsTotal);
 
@@ -35,7 +35,7 @@ export const prismaQueryDurationSeconds = new Histogram({
   name: 'prisma_query_duration_seconds',
   help: 'Prisma query duration in seconds',
   labelNames: ['model', 'action'],
-  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1]
+  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
 });
 metricsRegistry.registerMetric(prismaQueryDurationSeconds);
 

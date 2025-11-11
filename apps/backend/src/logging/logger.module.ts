@@ -9,7 +9,7 @@ export class CorrelatedLogger extends Logger {
   providers: [
     {
       provide: CorrelatedLogger,
-      useFactory: () => new CorrelatedLogger('App', { timestamp: true }),
+      useFactory: (): CorrelatedLogger => new CorrelatedLogger('App', { timestamp: true }),
     },
   ],
   exports: [CorrelatedLogger],

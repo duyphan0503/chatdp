@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { Env } from './config/env.schema.js';
+import type { Request, Response, NextFunction } from 'express';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware.js';
 import { HttpMetricsMiddleware } from './metrics/http.metrics.middleware.js';
 
@@ -13,7 +14,7 @@ interface HttpAdapterLike {
 
 interface ExpressLike {
   set: (key: string, value: unknown) => void;
-  use?: (...handlers: any[]) => void;
+  use?: (...handlers: Array<(req: Request, res: Response, next: NextFunction) => void>) => void;
 }
 
 function getExpressInstance(app: INestApplication): ExpressLike | null {
@@ -58,8 +59,8 @@ export function configureApp(app: INestApplication): void {
   // We instantiate manually instead of using module-level consumer for simplicity in bootstrap.
   const correlation = new CorrelationIdMiddleware();
   const httpMetrics = new HttpMetricsMiddleware();
-  app.use((req: any, res: any, next: any) => correlation.use(req, res, next));
-  app.use((req: any, res: any, next: any) => httpMetrics.use(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) => correlation.use(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) => httpMetrics.use(req, res, next));
 
   // Global API prefix
   app.setGlobalPrefix('api');
