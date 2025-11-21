@@ -1,0 +1,1 @@
+These tests cover realtime presence registry behavior. Integration tests for the gateway are in e2e.
