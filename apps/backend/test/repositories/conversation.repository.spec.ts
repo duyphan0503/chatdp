@@ -26,11 +26,16 @@ describe('ConversationRepository', () => {
 
   it('addParticipant proxies to prisma.participant.create', async () => {
     await repo.addParticipant('u1', 'c1', 'member');
-    expect(prisma.participant!.create).toHaveBeenCalledWith({ data: { userId: 'u1', conversationId: 'c1', role: 'member' as any } });
+    expect(prisma.participant!.create).toHaveBeenCalledWith({
+      data: { userId: 'u1', conversationId: 'c1', role: 'member' as any },
+    });
   });
 
   it('listByUser proxies to prisma.participant.findMany with include', async () => {
     await repo.listByUser('u1');
-    expect(prisma.participant!.findMany).toHaveBeenCalledWith({ where: { userId: 'u1' }, include: { conversation: true } });
+    expect(prisma.participant!.findMany).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      include: { conversation: true },
+    });
   });
 });

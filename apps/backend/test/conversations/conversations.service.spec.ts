@@ -65,7 +65,11 @@ describe('ConversationsService', () => {
         { userId: 'u3', role: ParticipantRole.member, joinedAt: new Date() },
       ],
     });
-    const res = await service.create('u1', { type: 'group', groupName: 'G', participantUserIds: ['u3'] });
+    const res = await service.create('u1', {
+      type: 'group',
+      groupName: 'G',
+      participantUserIds: ['u3'],
+    });
     expect(prisma.conversation!.create).toHaveBeenCalled();
     expect(res.participants.find((p) => p.userId === 'u1')!.role).toBe('admin');
   });

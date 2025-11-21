@@ -29,6 +29,9 @@ describe('UserRepository', () => {
 
   it('updateDisplayName updates displayName', async () => {
     await repo.updateDisplayName('u1', 'New Name');
-    expect(prisma.user!.update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { displayName: 'New Name' } });
+    expect(prisma.user!.update).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      data: { displayName: 'New Name' },
+    });
   });
 });

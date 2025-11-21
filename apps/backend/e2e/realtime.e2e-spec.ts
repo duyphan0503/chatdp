@@ -33,17 +33,21 @@ describe('RealtimeGateway (e2e)', () => {
   it('authenticates socket and sends/reads messages', async () => {
     // 1) Signup two users
     const rand = () => Math.random().toString(36).slice(2);
-    const alice = await request(baseUrl).post('/api/auth/signup').send({
-      email: `alice_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Alice',
-    });
+    const alice = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `alice_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Alice',
+      });
     expect(alice.status).toBe(201);
-    const bob = await request(baseUrl).post('/api/auth/signup').send({
-      email: `bob_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Bob',
-    });
+    const bob = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `bob_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Bob',
+      });
     expect(bob.status).toBe(201);
 
     const aliceToken = alice.body.accessToken as string;
@@ -74,14 +78,18 @@ describe('RealtimeGateway (e2e)', () => {
     );
     aliceSocket.emit('authenticate', { token: aliceToken });
 
-    const authedBob = new Promise<void>((resolve) => bobSocket.on('authenticated', () => resolve()));
+    const authedBob = new Promise<void>((resolve) =>
+      bobSocket.on('authenticated', () => resolve()),
+    );
     bobSocket.emit('authenticate', { token: bobToken });
 
     await authedAlice;
     await authedBob;
 
     // 4) Join conversation room sequentially to assert presence events
-    const aliceJoined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
+    const aliceJoined = new Promise<void>((resolve) =>
+      aliceSocket.on('conversation:joined', () => resolve()),
+    );
     aliceSocket.emit('conversation:join', { conversationId: convId });
     await aliceJoined;
 
@@ -90,7 +98,9 @@ describe('RealtimeGateway (e2e)', () => {
       aliceSocket.on('presence:online', (p: { userId: string }) => resolve(p)),
     );
 
-    const bobJoined = new Promise<void>((resolve) => bobSocket.on('conversation:joined', () => resolve()));
+    const bobJoined = new Promise<void>((resolve) =>
+      bobSocket.on('conversation:joined', () => resolve()),
+    );
     bobSocket.emit('conversation:join', { conversationId: convId });
     await bobJoined;
 
@@ -114,7 +124,9 @@ describe('RealtimeGateway (e2e)', () => {
 
     // 7) Bob marks read and Alice should see read event
     const readEvent = new Promise<{ messageId: string; userId: string }>((resolve) =>
-      aliceSocket.on('message:read', (data: { messageId: string; userId: string }) => resolve(data)),
+      aliceSocket.on('message:read', (data: { messageId: string; userId: string }) =>
+        resolve(data),
+      ),
     );
 
     const messageId = payload.message.id as string;

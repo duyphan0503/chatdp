@@ -14,12 +14,21 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "ci": "echo Run CI locally via turbo or gh"
+    "ci": "echo Run CI locally via turbo or gh",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@redocly/cli": "^2.11.0",
     "@types/passport-jwt": "^4.0.1",
     "date-fns": "^4.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "turbo": "^2.6.0"
+  },
+  "lint-staged": {
+    "apps/backend/src/**/*.ts": [
+      "pnpm --filter @chatdp/backend lint -- --fix",
+      "pnpm --filter @chatdp/backend format"
+    ]
   }
 }

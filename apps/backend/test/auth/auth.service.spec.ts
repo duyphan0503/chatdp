@@ -5,7 +5,10 @@ import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../../src/auth/auth.service.js';
 import { UserRepository, UserRecord } from '../../src/repositories/user.repository.js';
-import { RefreshTokenRepository, RefreshTokenRecord } from '../../src/repositories/refresh-token.repository.js';
+import {
+  RefreshTokenRepository,
+  RefreshTokenRecord,
+} from '../../src/repositories/refresh-token.repository.js';
 
 class InMemoryRefreshTokenRepo implements Partial<RefreshTokenRepository> {
   store = new Map<string, RefreshTokenRecord>();
@@ -68,22 +71,32 @@ describe('AuthService (unit) - refresh rotation, logout, and UA/IP binding', () 
     usersMock = {
       findByEmail: async (email: string) => (email === user.email ? user : null),
       findById: async (id: string) => (id === user.id ? user : null),
-      create: async (data) => ({ ...user, id: 'u2', email: data.email ?? null, passwordHash: data.passwordHash }),
+      create: async (data) => ({
+        ...user,
+        id: 'u2',
+        email: data.email ?? null,
+        passwordHash: data.passwordHash,
+      }),
     } as Partial<UserRepository>;
 
     const moduleRef = await Test.createTestingModule({
       imports: [JwtModule.register({ secret: 'testsecret', signOptions: { expiresIn: '15m' } })],
-       providers: [
+      providers: [
         AuthService,
         { provide: UserRepository, useValue: usersMock },
         { provide: RefreshTokenRepository, useValue: rtRepo },
-        { provide: ConfigService, useValue: { get: (k: string) => {
-          if (k === 'JWT_SECRET') return 'testsecret';
-          if (k === 'JWT_EXPIRES_IN') return '15m';
-          if (k === 'REFRESH_TOKEN_TTL') return '2m';
-          if (k === 'REFRESH_BIND_UA_IP') return 'true';
-          return undefined;
-        } } },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (k: string) => {
+              if (k === 'JWT_SECRET') return 'testsecret';
+              if (k === 'JWT_EXPIRES_IN') return '15m';
+              if (k === 'REFRESH_TOKEN_TTL') return '2m';
+              if (k === 'REFRESH_BIND_UA_IP') return 'true';
+              return undefined;
+            },
+          },
+        },
       ],
     }).compile();
 
@@ -164,7 +177,10 @@ describe('AuthService (unit) - refresh rotation, logout, and UA/IP binding', () 
     const pw = 'secretpw4';
     user.passwordHash = await argon2.hash(pw);
     // Login with UA/IP A
-    const first = await auth.login({ email: user.email!, password: pw }, { userAgent: 'UA-A', ip: '1.1.1.1' });
+    const first = await auth.login(
+      { email: user.email!, password: pw },
+      { userAgent: 'UA-A', ip: '1.1.1.1' },
+    );
     const payload = jwt.decode(first.refreshToken) as any;
     const stored = await rtRepo.findById(payload.jti);
     expect(stored?.userAgent).toBe('UA-A');

@@ -62,8 +62,6 @@ export class CorrelatedLogger implements LoggerService {
     this.write('trace', message, optionalParams);
   }
 }
-
-
 @Global()
 @Module({
   providers: [CorrelatedLogger],

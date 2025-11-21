@@ -35,10 +35,7 @@ describe('MessagesService', () => {
   it('create sets read for sender and delivered for others', async () => {
     (prisma.conversation!.findUnique as jest.Mock).mockResolvedValueOnce({
       id: 'c1',
-      participants: [
-        { userId: 'u1' },
-        { userId: 'u2' },
-      ],
+      participants: [{ userId: 'u1' }, { userId: 'u2' }],
     });
     (prisma.message!.create as jest.Mock).mockResolvedValueOnce({
       id: 'm1',
@@ -62,7 +59,10 @@ describe('MessagesService', () => {
   });
 
   it('list enforces participant', async () => {
-    (prisma.participant!.findUnique as jest.Mock).mockResolvedValueOnce({ userId: 'u1', conversationId: 'c1' });
+    (prisma.participant!.findUnique as jest.Mock).mockResolvedValueOnce({
+      userId: 'u1',
+      conversationId: 'c1',
+    });
     (prisma.message!.findMany as jest.Mock).mockResolvedValueOnce([]);
     const res = await service.list('c1', 'u1', 10);
     expect(prisma.message!.findMany).toHaveBeenCalled();
@@ -94,11 +94,27 @@ describe('MessagesService', () => {
   it('markRead is idempotent (second call no-op)', async () => {
     // First call transitions delivered -> read
     (prisma.message!.findUnique as jest.Mock)
-      .mockResolvedValueOnce({ id: 'm4', conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] } })
-      .mockResolvedValueOnce({ id: 'm4', conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] } });
+      .mockResolvedValueOnce({
+        id: 'm4',
+        conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] },
+      })
+      .mockResolvedValueOnce({
+        id: 'm4',
+        conversation: { participants: [{ userId: 'u1' }, { userId: 'u2' }] },
+      });
     (prisma.messageStatus!.findUnique as jest.Mock)
-      .mockResolvedValueOnce({ messageId: 'm4', userId: 'u2', status: DeliveryStatus.delivered, readAt: null })
-      .mockResolvedValueOnce({ messageId: 'm4', userId: 'u2', status: DeliveryStatus.read, readAt: new Date() });
+      .mockResolvedValueOnce({
+        messageId: 'm4',
+        userId: 'u2',
+        status: DeliveryStatus.delivered,
+        readAt: null,
+      })
+      .mockResolvedValueOnce({
+        messageId: 'm4',
+        userId: 'u2',
+        status: DeliveryStatus.read,
+        readAt: new Date(),
+      });
     (prisma.messageStatus!.update as jest.Mock).mockResolvedValueOnce({
       messageId: 'm4',
       userId: 'u2',
