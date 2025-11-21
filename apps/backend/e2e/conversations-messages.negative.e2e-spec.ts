@@ -14,7 +14,11 @@ async function signup(app: INestApplication, email: string) {
     .post('/api/auth/signup')
     .send({ email, password, displayName: 'Tester' })
     .expect(201);
-  return { accessToken: res.body.accessToken as string, refreshToken: res.body.refreshToken as string, userId: res.body.user.id as string };
+  return {
+    accessToken: res.body.accessToken as string,
+    refreshToken: res.body.refreshToken as string,
+    userId: res.body.user.id as string,
+  };
 }
 
 describe('Conversations & Messages negative (e2e)', () => {

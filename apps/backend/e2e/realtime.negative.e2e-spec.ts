@@ -32,7 +32,8 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     await app.close();
   });
 
-  it('rejects invalid authentication token', async () => { // timeout adjusted for potential slow disconnect
+  it('rejects invalid authentication token', async () => {
+    // timeout adjusted for potential slow disconnect
     const url = wsUrl(baseUrl);
     const sock: Socket = Client(url, { transports: ['websocket'] });
     await new Promise<void>((resolve) => sock.on('connect', () => resolve()));
@@ -61,16 +62,20 @@ describe('RealtimeGateway negative cases (e2e)', () => {
   it('emits error when joining a conversation user is not participant of', async () => {
     // Create Alice & Bob and a private conversation between them
     const rand = () => Math.random().toString(36).slice(2);
-    const alice = await request(baseUrl).post('/api/auth/signup').send({
-      email: `alice_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Alice',
-    });
-    const bob = await request(baseUrl).post('/api/auth/signup').send({
-      email: `bob_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Bob',
-    });
+    const alice = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `alice_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Alice',
+      });
+    const bob = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `bob_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Bob',
+      });
     expect(alice.status).toBe(201);
     expect(bob.status).toBe(201);
 
@@ -82,18 +87,22 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     const convId = convRes.body.id as string;
 
     // Create Charlie who is NOT part of the conversation
-    const charlie = await request(baseUrl).post('/api/auth/signup').send({
-      email: `charlie_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Charlie',
-    });
+    const charlie = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `charlie_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Charlie',
+      });
     expect(charlie.status).toBe(201);
 
     const url = wsUrl(baseUrl);
     const charlieSocket: Socket = Client(url, { transports: ['websocket'] });
     await new Promise<void>((resolve) => charlieSocket.on('connect', () => resolve()));
 
-    const authed = new Promise<void>((resolve) => charlieSocket.on('authenticated', () => resolve()));
+    const authed = new Promise<void>((resolve) =>
+      charlieSocket.on('authenticated', () => resolve()),
+    );
     charlieSocket.emit('authenticate', { token: charlie.body.accessToken });
     await authed;
 
@@ -111,16 +120,20 @@ describe('RealtimeGateway negative cases (e2e)', () => {
   it('rate limits excessive typing events', async () => {
     // Create two users & private conversation
     const rand = () => Math.random().toString(36).slice(2);
-    const alice = await request(baseUrl).post('/api/auth/signup').send({
-      email: `alice_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Alice',
-    });
-    const bob = await request(baseUrl).post('/api/auth/signup').send({
-      email: `bob_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Bob',
-    });
+    const alice = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `alice_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Alice',
+      });
+    const bob = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `bob_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Bob',
+      });
     expect(alice.status).toBe(201);
     expect(bob.status).toBe(201);
 
@@ -137,7 +150,9 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     const authed = new Promise<void>((resolve) => aliceSocket.on('authenticated', () => resolve()));
     aliceSocket.emit('authenticate', { token: alice.body.accessToken });
     await authed;
-    const joined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
+    const joined = new Promise<void>((resolve) =>
+      aliceSocket.on('conversation:joined', () => resolve()),
+    );
     aliceSocket.emit('conversation:join', { conversationId: convId });
     await joined;
 
@@ -170,16 +185,20 @@ describe('RealtimeGateway negative cases (e2e)', () => {
   it('rate limits excessive message:new events after window reset', async () => {
     // Create two users & private conversation
     const rand = () => Math.random().toString(36).slice(2);
-    const alice = await request(baseUrl).post('/api/auth/signup').send({
-      email: `alice_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Alice',
-    });
-    const bob = await request(baseUrl).post('/api/auth/signup').send({
-      email: `bob_${rand()}@example.com`,
-      password: 'StrongPassw0rd!',
-      displayName: 'Bob',
-    });
+    const alice = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `alice_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Alice',
+      });
+    const bob = await request(baseUrl)
+      .post('/api/auth/signup')
+      .send({
+        email: `bob_${rand()}@example.com`,
+        password: 'StrongPassw0rd!',
+        displayName: 'Bob',
+      });
     expect(alice.status).toBe(201);
     expect(bob.status).toBe(201);
 
@@ -196,7 +215,9 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     const authed = new Promise<void>((resolve) => aliceSocket.on('authenticated', () => resolve()));
     aliceSocket.emit('authenticate', { token: alice.body.accessToken });
     await authed;
-    const joined = new Promise<void>((resolve) => aliceSocket.on('conversation:joined', () => resolve()));
+    const joined = new Promise<void>((resolve) =>
+      aliceSocket.on('conversation:joined', () => resolve()),
+    );
     aliceSocket.emit('conversation:join', { conversationId: convId });
     await joined;
 
@@ -219,12 +240,27 @@ describe('RealtimeGateway negative cases (e2e)', () => {
     await new Promise((r) => setTimeout(r, 2100));
 
     const rateEventMessage = new Promise<{ event: string; retryAfterMs: number }>((resolve) =>
-      aliceSocket.on('rate:limit', (payload) => payload.event === 'message:new' && resolve(payload)),
+      aliceSocket.on(
+        'rate:limit',
+        (payload) => payload.event === 'message:new' && resolve(payload),
+      ),
     );
 
-    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'one' });
-    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'two' });
-    aliceSocket.emit('message:new', { conversationId: convId, contentType: 'text', content: 'three' });
+    aliceSocket.emit('message:new', {
+      conversationId: convId,
+      contentType: 'text',
+      content: 'one',
+    });
+    aliceSocket.emit('message:new', {
+      conversationId: convId,
+      contentType: 'text',
+      content: 'two',
+    });
+    aliceSocket.emit('message:new', {
+      conversationId: convId,
+      contentType: 'text',
+      content: 'three',
+    });
 
     const messageRatePayload = await Promise.race([
       rateEventMessage,

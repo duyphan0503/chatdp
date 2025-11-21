@@ -21,6 +21,7 @@ import { ConversationLeaveDto } from './dto/conversation-leave.dto.js';
 import { TypingDto } from './dto/typing.dto.js';
 import { MessageNewDto } from './dto/message-new.dto.js';
 import { MessageReadDto } from './dto/message-read.dto.js';
+import { wsEventsTotal } from '../metrics/metrics.service.js';
 
 interface AccessPayload {
   sub: string; // userId
@@ -32,15 +33,14 @@ interface AccessPayload {
 @WebSocketGateway({ namespace: '/ws', cors: { origin: true, credentials: true } })
 @Injectable()
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-export class MessagingGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
-  private readonly logger = new Logger(MessagingGateway.name);
+export class MessagingGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly wsRateTtlMs: number;
   private readonly wsRateLimit: number;
   private readonly rateCounters = new Map<string, { windowStart: number; count: number }>();
 
   @WebSocketServer() server!: Server;
+
+  private readonly logger = new Logger(MessagingGateway.name);
 
   constructor(
     private readonly jwt: JwtService,
@@ -49,6 +49,7 @@ export class MessagingGateway
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
   ) {
+
     // Initialize WS rate limiting deterministically (numeric seconds + count)
     const ttlSecRaw = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
     const limitRaw = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
@@ -56,7 +57,6 @@ export class MessagingGateway
     const limit = limitRaw > 0 ? limitRaw : 120;
     this.wsRateTtlMs = ttlSec * 1000;
     this.wsRateLimit = limit;
-
   }
 
   afterInit(server: Server): void {
@@ -66,13 +66,17 @@ export class MessagingGateway
   handleConnection(client: Socket): void {
     // No-op until authenticate event
     this.logger.debug(`Socket connected: ${client.id}`);
+    this.incWs('connection');
   }
 
   handleDisconnect(client: Socket): void {
     const userId: string | undefined = client.data?.userId;
     if (!userId) return;
     const remaining = this.presence.remove(userId, client.id);
-    this.logger.debug(`Socket disconnected: ${client.id}; user ${userId} sockets left=${remaining}`);
+    this.logger.debug(
+      `Socket disconnected: ${client.id}; user ${userId} sockets left=${remaining}`,
+    );
+    this.incWs('disconnect');
     if (remaining === 0) {
       // User fully offline; broadcast to all conversations they were part of
       const { conversations } = this.presence.clearUser(userId);
@@ -86,6 +90,7 @@ export class MessagingGateway
 
   // Client -> Server: send JWT to establish an authenticated session
   @SubscribeMessage('authenticate')
+  // metrics: authentication attempt
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   async handleAuthenticate(
     @ConnectedSocket() client: Socket,
@@ -99,6 +104,7 @@ export class MessagingGateway
         client.disconnect(true);
         return;
       }
+      this.incWs('authenticate');
       const payload = await this.jwt.verifyAsync<AccessPayload>(data?.token, { secret });
       if (payload?.typ && payload.typ !== 'access') {
         this.logger.warn(`Authentication failed (invalid token type) for socket ${client.id}`);
@@ -110,12 +116,16 @@ export class MessagingGateway
       client.data.email = payload.email;
       client.join(this.userRoom(payload.sub));
       const count = this.presence.add(payload.sub, client.id);
-      this.logger.debug(`Authenticated socket ${client.id} as user ${payload.sub}; online sockets=${count}`);
+      this.logger.debug(
+        `Authenticated socket ${client.id} as user ${payload.sub}; online sockets=${count}`,
+      );
       // On first online socket, emit presence:online to any rooms user has already joined (if any tracked)
       if (count === 1) {
         const joined = this.presence.getJoinedConversations(payload.sub);
         for (const convId of joined) {
-          this.server.to(this.conversationRoom(convId)).emit('presence:online', { userId: payload.sub });
+          this.server
+            .to(this.conversationRoom(convId))
+            .emit('presence:online', { userId: payload.sub });
         }
       }
       client.emit('authenticated', { status: 'ok', userId: payload.sub });
@@ -147,7 +157,9 @@ export class MessagingGateway
     await client.join(this.conversationRoom(convId));
     this.presence.joinConversation(userId, convId);
     // notify others in the room
-    this.server.to(this.conversationRoom(convId)).emit('conversation:user_joined', { conversationId: convId, userId });
+    this.server
+      .to(this.conversationRoom(convId))
+      .emit('conversation:user_joined', { conversationId: convId, userId });
     // if this is the first socket for the user, let others know user is online
     if (this.presence.getUserSocketIds(userId).length === 1) {
       this.server.to(this.conversationRoom(convId)).emit('presence:online', { userId });
@@ -165,7 +177,9 @@ export class MessagingGateway
     if (!convId) return;
     await client.leave(this.conversationRoom(convId));
     this.presence.leaveConversation(client.data.userId, convId);
-    this.server.to(this.conversationRoom(convId)).emit('conversation:user_left', { conversationId: convId, userId: client.data.userId });
+    this.server
+      .to(this.conversationRoom(convId))
+      .emit('conversation:user_left', { conversationId: convId, userId: client.data.userId });
     client.emit('conversation:left', { conversationId: convId });
   }
 
@@ -177,7 +191,9 @@ export class MessagingGateway
   ): Promise<void> {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'typing')) {
-      this.logger.debug(`Rate limit triggered for typing (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
+      this.logger.debug(
+        `Rate limit triggered for typing (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`,
+      );
       client.emit('rate:limit', { event: 'typing', retryAfterMs: this.wsRateTtlMs });
       return;
     }
@@ -199,7 +215,9 @@ export class MessagingGateway
   ): Promise<void> {
     this.ensureAuthed(client);
     if (!this.checkRate(client, 'message:new')) {
-      this.logger.debug(`Rate limit triggered for message:new (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`);
+      this.logger.debug(
+        `Rate limit triggered for message:new (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`,
+      );
       client.emit('rate:limit', { event: 'message:new', retryAfterMs: this.wsRateTtlMs });
       return;
     }
@@ -213,9 +231,7 @@ export class MessagingGateway
         content,
         mediaUrl,
       });
-      this.server
-        .to(this.conversationRoom(conversationId))
-        .emit('message:new', { message });
+      this.server.to(this.conversationRoom(conversationId)).emit('message:new', { message });
     } catch (e) {
       client.emit('error', { message: (e as Error).message ?? 'failed to send message' });
     }
@@ -276,5 +292,14 @@ export class MessagingGateway
 
   private userRoom(id: string): string {
     return `user:${id}`;
+  }
+
+  // Metrics hook for WebSocket events
+  private incWs(event: string): void {
+    try {
+      wsEventsTotal.labels(event).inc(1);
+    } catch {
+      // ignore metrics errors
+    }
   }
 }

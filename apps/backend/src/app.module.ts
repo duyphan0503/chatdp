@@ -11,11 +11,16 @@ import { ConversationsModule } from './conversations/conversations.module.js';
 import { MessagesModule } from './messages/messages.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
 import type { Env } from './config/env.schema.js';
+import { MetricsModule } from './metrics/index.js';
+import { MetricsController } from './metrics/index.js';
+import { LoggerModule } from './logging/logger.module.js';
 
 @Module({
   imports: [
     // Load environment variables and make ConfigService globally available
     EnvConfigModule,
+    LoggerModule,
+    MetricsModule,
     // Basic rate limiting; configurable via env
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
@@ -41,7 +46,7 @@ import type { Env } from './config/env.schema.js';
     // Phase 5: Realtime/WebSocket module
     RealtimeModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, MetricsController],
   providers: [
     // Apply rate limiting globally
     {

@@ -34,11 +34,7 @@ describe('Environment validation', () => {
       CORS_ORIGINS: 'https://a.test, https://b.test , https://c.test',
     } as Record<string, unknown>;
     const validated = validate(raw);
-    expect(validated.CORS_ORIGINS).toEqual([
-      'https://a.test',
-      'https://b.test',
-      'https://c.test',
-    ]);
+    expect(validated.CORS_ORIGINS).toEqual(['https://a.test', 'https://b.test', 'https://c.test']);
   });
 
   it('applies defaults (PORT, RATE_LIMIT_TTL) when omitted', () => {
