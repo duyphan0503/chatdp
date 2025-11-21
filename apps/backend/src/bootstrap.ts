@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import type { Env } from './config/env.schema.js';
 import type { Request, Response, NextFunction } from 'express';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware.js';
-import { HttpMetricsMiddleware } from './metrics/http.metrics.middleware.js';
+import { HttpMetricsMiddleware } from './metrics/index.js';
 
 // Narrowed types to avoid any-casts while accessing Express instance
 interface HttpAdapterLike {

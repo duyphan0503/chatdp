@@ -2,13 +2,16 @@ import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from './config/env.schema.js';
-
+import { CorrelatedLogger } from './logging/logger.module.js';
+ 
 @Controller()
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<Env, true>,
+    private readonly logger: CorrelatedLogger,
   ) {}
+
 
   @Get('healthz')
   getHealth(): { status: 'ok'; timestamp: string } {

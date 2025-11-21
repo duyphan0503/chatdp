@@ -8,7 +8,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Injectable, Logger, UnauthorizedException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Injectable, UnauthorizedException, UsePipes, ValidationPipe } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +22,7 @@ import { TypingDto } from './dto/typing.dto.js';
 import { MessageNewDto } from './dto/message-new.dto.js';
 import { MessageReadDto } from './dto/message-read.dto.js';
 import { wsEventsTotal } from '../metrics/metrics.service.js';
+import { CorrelatedLogger } from '../logging/logger.module.js';
 
 interface AccessPayload {
   sub: string; // userId
@@ -36,7 +37,6 @@ interface AccessPayload {
 export class MessagingGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  private readonly logger = new Logger(MessagingGateway.name);
   private readonly wsRateTtlMs: number;
   private readonly wsRateLimit: number;
   private readonly rateCounters = new Map<string, { windowStart: number; count: number }>();
@@ -49,6 +49,7 @@ export class MessagingGateway
     private readonly messages: MessagesService,
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
+    private readonly logger: CorrelatedLogger,
   ) {
     // Initialize WS rate limiting deterministically (numeric seconds + count)
     const ttlSecRaw = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });

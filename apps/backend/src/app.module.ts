@@ -11,8 +11,8 @@ import { ConversationsModule } from './conversations/conversations.module.js';
 import { MessagesModule } from './messages/messages.module.js';
 import { RealtimeModule } from './realtime/realtime.module.js';
 import type { Env } from './config/env.schema.js';
-import { MetricsModule } from './metrics/metrics.module.js';
-import { MetricsController } from './metrics/metrics.controller.js';
+import { MetricsModule } from './metrics/index.js';
+import { MetricsController } from './metrics/index.js';
 import { LoggerModule } from './logging/logger.module.js';
 
 @Module({

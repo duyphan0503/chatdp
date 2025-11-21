@@ -1,37 +1,68 @@
-import { Global, Module, Logger, Injectable, Scope, Inject } from '@nestjs/common';
+import { Global, Module, Injectable, Scope, Inject, LoggerService } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import type { Request } from 'express';
 
 type CorrelatedRequest = Request & { correlationId?: string };
 
 @Injectable({ scope: Scope.REQUEST })
-export class CorrelatedLogger extends Logger {
-  constructor(@Inject(REQUEST) private readonly req: CorrelatedRequest) {
-    super('App', { timestamp: true });
+export class CorrelatedLogger implements LoggerService {
+  constructor(@Inject(REQUEST) private readonly req: CorrelatedRequest) {}
+
+  private toPlain(value: unknown): unknown {
+    if (value instanceof Error) {
+      return {
+        name: value.name,
+        message: value.message,
+        stack: value.stack,
+      };
+    }
+    return value;
   }
 
-  private withCid(message: unknown): string {
+  private write(
+    level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace',
+    message: unknown,
+    optionalParams: unknown[],
+  ): void {
     const cid = this.req.correlationId;
-    const msg = typeof message === 'string' ? message : JSON.stringify(message);
-    return cid ? `[cid=${cid}] ${msg}` : msg;
+    const payload: Record<string, unknown> = {
+      ts: new Date().toISOString(),
+      level,
+      cid: cid ?? undefined,
+      msg: this.toPlain(message),
+    };
+    if (optionalParams.length > 0) {
+      payload.meta = optionalParams.map((v) => this.toPlain(v));
+    }
+    try {
+      process.stdout.write(`${JSON.stringify(payload)}\n`);
+    } catch {
+      // eslint-disable-next-line no-console
+      console.log('[CorrelatedLogger-fallback]', level, cid, message, ...optionalParams);
+    }
   }
 
-  override log(message: unknown, ...optionalParams: unknown[]): void {
-    super.log(this.withCid(message), ...(optionalParams as []));
+  log(message: unknown, ...optionalParams: unknown[]): void {
+    this.write('info', message, optionalParams);
   }
-  override error(message: unknown, ...optionalParams: unknown[]): void {
-    super.error(this.withCid(message), ...(optionalParams as []));
+
+  error(message: unknown, ...optionalParams: unknown[]): void {
+    this.write('error', message, optionalParams);
   }
-  override warn(message: unknown, ...optionalParams: unknown[]): void {
-    super.warn(this.withCid(message), ...(optionalParams as []));
+
+  warn(message: unknown, ...optionalParams: unknown[]): void {
+    this.write('warn', message, optionalParams);
   }
-  override debug(message: unknown, ...optionalParams: unknown[]): void {
-    super.debug(this.withCid(message), ...(optionalParams as []));
+
+  debug(message: unknown, ...optionalParams: unknown[]): void {
+    this.write('debug', message, optionalParams);
   }
-  override verbose(message: unknown, ...optionalParams: unknown[]): void {
-    super.verbose(this.withCid(message), ...(optionalParams as []));
+
+  verbose(message: unknown, ...optionalParams: unknown[]): void {
+    this.write('trace', message, optionalParams);
   }
 }
+
 
 @Global()
 @Module({
