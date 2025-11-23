@@ -39,7 +39,10 @@ export function configureApp(app: INestApplication): void {
   // Request body size limits (basic hardening)
   const jsonLimit = '100kb';
   const urlEncodedLimit = '100kb';
+  // body-parser types are not fully safe-typed; narrow via lint-disable for this known-safe usage.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   app.use(bodyParser.json({ limit: jsonLimit }));
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   app.use(
     bodyParser.urlencoded({
       extended: true,
