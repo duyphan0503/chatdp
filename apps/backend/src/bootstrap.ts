@@ -2,8 +2,8 @@ import type { INestApplication, LogLevel } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
-import bodyParser from 'body-parser';
 import type { Env } from './config/env.schema.js';
+import { json, urlencoded } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware.js';
 import { HttpMetricsMiddleware } from './metrics/index.js';
@@ -39,15 +39,13 @@ export function configureApp(app: INestApplication): void {
   // Request body size limits (basic hardening)
   const jsonLimit = '100kb';
   const urlEncodedLimit = '100kb';
-  // body-parser types are not fully safe-typed; narrow via lint-disable for this known-safe usage.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  app.use(bodyParser.json({ limit: jsonLimit }));
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  const urlencodedParser = bodyParser.urlencoded({
-    extended: true,
-    limit: urlEncodedLimit,
-  });
-  app.use(urlencodedParser);
+  app.use(json({ limit: jsonLimit }));
+  app.use(
+    urlencoded({
+      extended: true,
+      limit: urlEncodedLimit,
+    }),
+  );
 
   // Configure log levels from env LOG_LEVEL
   const level = config.get('LOG_LEVEL', { infer: true });
