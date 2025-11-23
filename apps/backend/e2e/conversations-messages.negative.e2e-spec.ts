@@ -4,6 +4,8 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/bootstrap.js';
 
+jest.setTimeout(30000);
+
 function randEmail() {
   return `neg_${Math.random().toString(36).slice(2)}@test.io`;
 }

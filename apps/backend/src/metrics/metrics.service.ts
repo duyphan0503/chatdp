@@ -37,6 +37,32 @@ export const wsEventsTotal = new Counter({
 });
 metricsRegistry.registerMetric(wsEventsTotal);
 
+// Call signaling counters (Phase 8)
+export const callsInitiatedTotal = new Counter({
+  name: 'calls_initiated_total',
+  help: 'Total number of call sessions started',
+  labelNames: ['type'],
+});
+metricsRegistry.registerMetric(callsInitiatedTotal);
+
+export const callsAcceptedTotal = new Counter({
+  name: 'calls_accepted_total',
+  help: 'Total number of calls accepted by callee',
+});
+metricsRegistry.registerMetric(callsAcceptedTotal);
+
+export const callsRejectedTotal = new Counter({
+  name: 'calls_rejected_total',
+  help: 'Total number of calls explicitly rejected by a participant',
+});
+metricsRegistry.registerMetric(callsRejectedTotal);
+
+export const callsMissedTotal = new Counter({
+  name: 'calls_missed_total',
+  help: 'Total number of calls that timed out while ringing',
+});
+metricsRegistry.registerMetric(callsMissedTotal);
+
 // Prisma query duration histogram
 export const prismaQueryDurationSeconds = new Histogram({
   name: 'prisma_query_duration_seconds',

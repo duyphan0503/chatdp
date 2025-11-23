@@ -55,6 +55,10 @@ export const envSchema = z.object({
   WS_RATE_LIMIT_TTL: z.coerce.number().int().positive().default(60),
   WS_RATE_LIMIT_LIMIT: z.coerce.number().int().positive().default(120),
 
+  // WS call initiation rate limiting (seconds + count)
+  WS_CALL_RATE_LIMIT_TTL: z.coerce.number().int().positive().default(60),
+  WS_CALL_RATE_LIMIT_LIMIT: z.coerce.number().int().positive().default(30),
+
   // Logging level
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
@@ -63,6 +67,9 @@ export const envSchema = z.object({
 
   // Optional URL ví dụ thêm
   FRONTEND_URL: z.string().url().optional(),
+
+  // Redis cache URL (optional, Phase 7 - Hardening)
+  REDIS_URL: z.string().url().optional(),
 });
 
 // TypeScript type tự động suy ra từ schema (single source of truth)

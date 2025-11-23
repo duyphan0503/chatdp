@@ -4,9 +4,11 @@ import { AppModule } from './app.module.js';
 import { configureApp } from './bootstrap.js';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from './config/env.schema.js';
+import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useGlobalFilters(new AllExceptionsFilter());
   configureApp(app);
 
   const config = app.get(ConfigService<Env, true>);
@@ -17,4 +19,5 @@ async function bootstrap(): Promise<void> {
   const url = await app.getUrl();
   logger.log(`Backend listening on ${url}`);
 }
+
 void bootstrap();

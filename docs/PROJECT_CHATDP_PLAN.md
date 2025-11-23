@@ -159,10 +159,165 @@ Các sự kiện hiện đang được triển khai trong Phase 5 (Messaging rea
 - Triển khai hiện tại: in-memory Map (per instance). Triển khai phân tán (Redis) sẽ thực hiện ở Phase 7 (Hardening).
 
 **Sự kiện dự kiến ở các phase sau:**
-- Phase 8 (Calls): `call:initiate`, `call:accept`, `call:reject`, `call:ice_candidate`.
+- Phase 8 (Calls): `call:initiate`, `call:accept`, `call:reject`, `call:end`, `call:ice_candidate`.
 - Presence nâng cao / user status broadcast sẽ được chuẩn hoá thêm (`user:status:update`).
 
+### 5.3. WebSocket Events (Phase 8  Calls Signaling)
+
+**Namespace:** `/ws`
+
+**Call state machine (in-memory, per-process):**
+- `RINGING`  cuộc gọi mới tạo, đang chờ callee accept/reject.
+- `IN_CALL`  callee đã accept, đang trong cuộc gọi.
+- `REJECTED`  bị từ chối (callee hoặc caller).
+- `ENDED`  kết thúc bình thường (hangup).
+- `MISSED`  hết thời gian RINGING mà không có phản hồi.
+
+Mỗi `CallSession` ở backend bao gồm:
+- `callId` (UUID)
+- `conversationId`
+- `callerId`
+- `calleeId`
+- `type`  `'voice' | 'video'`
+- `state`  như trên
+- `createdAt`, `updatedAt`
+
+**Client emit:**
+
+- `call:initiate`
+  - Payload:
+    ```jsonc
+    {
+      "conversationId": "string",      // must be private (1-1)
+      "type": "voice" | "video",      // loại cuộc gọi
+      "sdpOffer"?: any                  // optional, forwarding to callee
+    }
+    ```
+  - Điều kiện:
+    - Socket đã được `authenticate` (JWT access).
+    - User là participant của conversation và conversation là `private` (2 participants).
+    - Không có ai trong 2 bên đang ở cuộc gọi active khác.
+    - Không có quan hệ `Friendship` với `status = blocked` giữa caller và callee.
+  - Rate limit:
+    - Biến môi trường riêng: `WS_CALL_RATE_LIMIT_TTL`, `WS_CALL_RATE_LIMIT_LIMIT`.
+    - Nếu vi phạm: server emit `rate:limit` với `{ event: 'call:initiate', retryAfterMs }`.
+
+- `call:accept`
+  - Payload:
+    ```jsonc
+    {
+      "callId": "string",
+      "sdpAnswer"?: any
+    }
+    ```
+  - Chỉ callee của call mới được accept.
+
+- `call:reject`
+  - Payload:
+    ```jsonc
+    {
+      "callId": "string",
+      "reason"?: "string"   // ví dụ: "busy"
+    }
+    ```
+
+- `call:end`
+  - Payload:
+    ```jsonc
+    {
+      "callId": "string",
+      "reason"?: "string"   // ví dụ: "hangup"
+    }
+    ```
+
+- `call:ice_candidate`
+  - Payload:
+    ```jsonc
+    {
+      "callId": "string",
+      "candidate": any
+    }
+    ```
+
+**Server emit:**
+
+- `call:incoming` (tới callee)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "fromUserId": "string",        // caller
+    "type": "voice" | "video",
+    "sdpOffer"?: any,
+    "createdAt": "ISO-8601"
+  }
+  ```
+
+- `call:initiated` (tới caller)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "calleeUserId": "string",
+    "type": "voice" | "video"
+  }
+  ```
+
+- `call:accepted` (tới cả caller & callee)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "fromUserId": "string",       // user đã accept
+    "sdpAnswer"?: any
+  }
+  ```
+
+- `call:rejected` (tới cả caller & callee)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "fromUserId": "string",       // người reject
+    "reason": "string"            // ví dụ: "busy"
+  }
+  ```
+
+- `call:ended` (tới cả caller & callee)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "fromUserId": "string",       // người chủ động end
+    "reason": "string"            // ví dụ: "hangup" hoặc "timeout" (MISSED)
+  }
+  ```
+
+- `call:ice_candidate` (tới cả caller & callee)
+  ```jsonc
+  {
+    "callId": "string",
+    "conversationId": "string",
+    "fromUserId": "string",
+    "candidate": any
+  }
+  ```
+
+- `call:failed` (tới caller khi initiate thất bại)
+  ```jsonc
+  {
+    "reason": "not_participant" | "busy" | "blocked" | "error"
+  }
+  ```
+
+**Metrics Phase 8 (bổ sung):**
+- `calls_initiated_total [type]`
+- `calls_accepted_total []`
+- `calls_rejected_total []`
+- `calls_missed_total []`
+ 
 ---
+
 
 ## 6. Lộ trình Phát triển (Milestones)
 
