@@ -43,12 +43,11 @@ export function configureApp(app: INestApplication): void {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   app.use(bodyParser.json({ limit: jsonLimit }));
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  app.use(
-    bodyParser.urlencoded({
-      extended: true,
-      limit: urlEncodedLimit,
-    }),
-  );
+  const urlencodedParser = bodyParser.urlencoded({
+    extended: true,
+    limit: urlEncodedLimit,
+  });
+  app.use(urlencodedParser);
 
   // Configure log levels from env LOG_LEVEL
   const level = config.get('LOG_LEVEL', { infer: true });
