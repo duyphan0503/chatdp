@@ -21,7 +21,11 @@ describe('CallStateStore', () => {
 
     store.create(session);
 
-    expect(store.getById('call-1')).toMatchObject({ callId: 'call-1', callerId: 'u1', calleeId: 'u2' });
+    expect(store.getById('call-1')).toMatchObject({
+      callId: 'call-1',
+      callerId: 'u1',
+      calleeId: 'u2',
+    });
     expect(store.getByUser('u1')!.callId).toBe('call-1');
     expect(store.getByUser('u2')!.callId).toBe('call-1');
   });

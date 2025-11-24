@@ -8,7 +8,7 @@ import { CallsGateway } from './calls.gateway.js';
 import { CallService } from './call.service.js';
 import { CallStateStore } from './call-state.store.js';
 import { CallNotificationService } from './call-notification.service.js';
- 
+
 // Phase 5  Realtime/WebSocket
 // Provides messaging gateway + presence registry. Adapter abstraction left for later (Redis).
 // Phase 8  Calls signaling (WebRTC) adds CallsGateway + CallService on top.
@@ -25,5 +25,3 @@ import { CallNotificationService } from './call-notification.service.js';
   exports: [MessagingGateway, CallsGateway],
 })
 export class RealtimeModule {}
-
-

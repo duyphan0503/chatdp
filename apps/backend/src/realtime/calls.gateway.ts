@@ -52,7 +52,6 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
     this.wsCallRateLimit = limit;
   }
 
-
   afterInit(server: Server): void {
     this.server = server;
   }
@@ -81,7 +80,7 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
       client.emit('rate:limit', { event: 'call:initiate', retryAfterMs: this.wsCallRateTtlMs });
       return;
     }
- 
+
     try {
       const session = await this.calls.initiateCall({
         conversationId: payload.conversationId,
@@ -89,7 +88,6 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
         type: payload.type as CallType,
       });
       this.incWs('call:initiate');
-
 
       // Notify callee
       this.server.to(this.userRoom(session.calleeId)).emit('call:incoming', {
@@ -114,7 +112,8 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
         `Failed to initiate call for user=${callerId} conv=${payload?.conversationId}: ${message}`,
       );
       let reason: string = 'error';
-      if (message === 'not a participant' || message === 'not_participant') reason = 'not_participant';
+      if (message === 'not a participant' || message === 'not_participant')
+        reason = 'not_participant';
       else if (message === 'busy') reason = 'busy';
       else if (message === 'blocked') reason = 'blocked';
       client.emit('call:failed', { reason });
@@ -285,7 +284,7 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
     entry.count++;
     return true;
   }
- 
+
   private incWs(event: string): void {
     try {
       wsEventsTotal.labels(event).inc(1);
@@ -294,5 +293,3 @@ export class CallsGateway implements OnGatewayInit, OnGatewayConnection {
     }
   }
 }
-
-

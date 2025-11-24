@@ -2,16 +2,15 @@ import { CallService } from '../../src/realtime/call.service.js';
 import { CallStateStore } from '../../src/realtime/call-state.store.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { CallNotificationService } from '../../src/realtime/call-notification.service.js';
- 
+
 jest.useFakeTimers();
- 
 
 describe('CallService', () => {
   let store: CallStateStore;
   let prisma: jest.Mocked<Partial<PrismaService>>;
   let notifications: jest.Mocked<CallNotificationService>;
   let service: CallService;
- 
+
   beforeEach(() => {
     store = new CallStateStore();
     prisma = {
@@ -25,11 +24,9 @@ describe('CallService', () => {
     notifications = {
       notifyIncomingCallIfOffline: jest.fn().mockResolvedValue(undefined),
     } as any;
- 
+
     service = new CallService(prisma as PrismaService, store, notifications);
   });
-
-
 
   it('initiateCall enforces 1-1 participation and marks busy when user already in call', async () => {
     (prisma.participant!.findMany as jest.Mock).mockResolvedValue([
@@ -44,7 +41,7 @@ describe('CallService', () => {
     });
 
     expect(notifications.notifyIncomingCallIfOffline).toHaveBeenCalledWith(session);
- 
+
     expect(session.callerId).toBe('u1');
 
     expect(session.calleeId).toBe('u2');
@@ -66,7 +63,7 @@ describe('CallService', () => {
     await expect(
       service.initiateCall({ conversationId: 'conv-x', callerId: 'u1', type: 'voice' }),
     ).rejects.toThrow('not a participant');
- 
+
     // not 1-1 conversation (e.g. group)
     (prisma.participant!.findMany as jest.Mock).mockResolvedValueOnce([
       { userId: 'u1' },
@@ -94,7 +91,6 @@ describe('CallService', () => {
       service.initiateCall({ conversationId: 'conv-blocked', callerId: 'caller', type: 'voice' }),
     ).rejects.toThrow('blocked');
   });
-
 
   it('acceptCall moves RINGING -> IN_CALL and only callee may accept', async () => {
     (prisma.participant!.findMany as jest.Mock).mockResolvedValueOnce([

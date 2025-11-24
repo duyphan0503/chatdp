@@ -265,8 +265,12 @@ describe('RealtimeGateway (e2e)', () => {
     }>((resolve) =>
       bobSocket.on(
         'message:deleted',
-        (data: { messageId: string; conversationId: string; deletedAt: string; senderId: string }) =>
-          resolve(data),
+        (data: {
+          messageId: string;
+          conversationId: string;
+          deletedAt: string;
+          senderId: string;
+        }) => resolve(data),
       ),
     );
 

@@ -121,9 +121,7 @@ describe('Calls signaling (Phase 8) - negative cases (e2e)', () => {
     const aliceSocket: Socket = Client(url, { transports: ['websocket'] });
     await new Promise<void>((resolve) => aliceSocket.on('connect', () => resolve()));
 
-    const authed = new Promise<void>((resolve) =>
-      aliceSocket.on('authenticated', () => resolve()),
-    );
+    const authed = new Promise<void>((resolve) => aliceSocket.on('authenticated', () => resolve()));
     aliceSocket.emit('authenticate', { token: alice.body.accessToken });
     await authed;
 
@@ -132,18 +130,17 @@ describe('Calls signaling (Phase 8) - negative cases (e2e)', () => {
         if (payload.event === 'call:initiate') resolve(payload);
       }),
     );
- 
+
     // Spam multiple call:initiate events; after enough attempts the per-user
     // rate limiter should emit `rate:limit` for call:initiate.
     for (let i = 0; i < 40; i++) {
       aliceSocket.emit('call:initiate', { conversationId: convId, type: 'voice' });
     }
- 
+
     const ratePayload = await rateEvent;
     expect(ratePayload.event).toBe('call:initiate');
     expect(ratePayload.retryAfterMs).toBeGreaterThan(0);
- 
-    aliceSocket.disconnect();
 
+    aliceSocket.disconnect();
   });
 });
