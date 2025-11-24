@@ -1,4 +1,13 @@
-import { IsEnum, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class MessageCreateDto {
   @IsEnum(['text', 'image', 'video', 'file', 'voice'])
@@ -15,4 +24,24 @@ export class MessageCreateDto {
   @IsOptional()
   @IsString()
   mediaUrl?: string;
+
+  @ValidateIf((o: MessageCreateDto) => o.contentType !== 'text')
+  @IsOptional()
+  @IsString()
+  mediaMimeType?: string;
+
+  @ValidateIf((o: MessageCreateDto) => o.contentType !== 'text')
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  mediaSize?: number;
+
+  @IsOptional()
+  @IsString()
+  contentId?: string;
+
+  // Optional reply-to message
+  @IsOptional()
+  @IsUUID('4')
+  replyToMessageId?: string;
 }

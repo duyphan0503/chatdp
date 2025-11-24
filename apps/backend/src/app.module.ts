@@ -17,6 +17,7 @@ import { MetricsModule } from './metrics/index.js';
 import { MetricsController } from './metrics/index.js';
 import { LoggerModule } from './logging/logger.module.js';
 import { CacheConfigModule } from './cache/cache.module.js';
+import { MediaModule } from './media/media.module.js';
 
 @Module({
   imports: [
@@ -72,6 +73,8 @@ import { CacheConfigModule } from './cache/cache.module.js';
     MessagesModule,
     // Phase 5: Realtime/WebSocket module
     RealtimeModule,
+    // Phase 9: Media module
+    MediaModule,
   ],
   controllers: [HealthController, MetricsController],
   providers: [

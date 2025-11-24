@@ -1,19 +1,61 @@
-import { Controller, Post, Query } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { MediaService } from './media.service.js';
+import { MediaPresignRequestDto, MediaPresignResponseDto } from './dto/media-presign.dto.js';
 
-// Phase 9 — Media Upload skeleton
-// In Phase 9, this controller will issue presigned URLs (S3/MinIO) and accept upload callbacks.
+// Phase 9 — Media Upload
+// This controller issues presigned URLs (S3/MinIO) for uploads.
 @Controller('media')
+@UseGuards(JwtAuthGuard)
 export class MediaController {
+  constructor(private readonly mediaService: MediaService) {}
+
   @Post('presign')
-  presign(@Query('fileName') fileName: string, @Query('mime') mime: string) {
-    // TODO: validate input, authN/Z, size limits, content-type allowlist
-    // For now, return a placeholder response
-    return {
-      uploadUrl: 'https://example-upload-url',
-      downloadUrl: 'https://example-download-url',
+  async presign(
+    @Query('fileName') fileName: string,
+    @Query('mime') mime: string,
+    @Query('contentLength') contentLength: string | undefined,
+    @Req() req: Request,
+  ): Promise<MediaPresignResponseDto> {
+    const { userId } = req.user as { userId: string };
+    const dto: MediaPresignRequestDto = {
       fileName,
       mime,
-      expiresIn: 300,
-    } as const;
+      contentLength: contentLength ? Number(contentLength) : undefined,
+    };
+
+    const result = await this.mediaService.presignUpload({
+      fileName: dto.fileName,
+      mimeType: dto.mime,
+      contentLength: dto.contentLength,
+      uploaderId: userId,
+    });
+
+    return {
+      uploadUrl: result.uploadUrl,
+      downloadUrl: result.downloadUrl,
+      expiresIn: result.expiresIn,
+    };
+  }
+
+  @Post(':id/accessed')
+  @HttpCode(200)
+  async markAccessed(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Req() req: Request,
+  ): Promise<{ status: 'ok' }> {
+    const { userId } = req.user as { userId: string };
+    await this.mediaService.markAccessed(id, userId);
+    return { status: 'ok' };
   }
 }

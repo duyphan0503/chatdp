@@ -21,7 +21,10 @@
     "gen:jwt-secret": "node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@nestjs/cache-manager": "^3.0.1",
+
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.0",
     "@nestjs/core": "^10.0.0",

@@ -203,4 +203,103 @@ export class ConversationsService {
       })),
     };
   }
+
+  async addMember(
+    conversationId: string,
+    actorUserId: string,
+    targetUserId: string,
+  ): Promise<ConversationWithParticipants> {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
+    if (!conversation) throw new NotFoundException('conversation not found');
+    if (conversation.type !== ConversationType.group)
+      throw new BadRequestException('not a group conversation');
+
+    const actor = conversation.participants.find((p) => p.userId === actorUserId);
+    if (!actor) throw new ForbiddenException('not a participant');
+    if (actor.role !== ParticipantRole.admin) throw new ForbiddenException('not an admin');
+
+    const existing = conversation.participants.find((p) => p.userId === targetUserId);
+    if (!existing) {
+      await this.prisma.participant.create({
+        data: { userId: targetUserId, conversationId, role: ParticipantRole.member },
+      });
+    }
+
+    return this.findById(conversationId, actorUserId);
+  }
+
+  async removeMember(
+    conversationId: string,
+    actorUserId: string,
+    targetUserId: string,
+  ): Promise<ConversationWithParticipants> {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
+    if (!conversation) throw new NotFoundException('conversation not found');
+    if (conversation.type !== ConversationType.group)
+      throw new BadRequestException('not a group conversation');
+
+    const actor = conversation.participants.find((p) => p.userId === actorUserId);
+    if (!actor) throw new ForbiddenException('not a participant');
+    if (actor.role !== ParticipantRole.admin) throw new ForbiddenException('not an admin');
+
+    const target = conversation.participants.find((p) => p.userId === targetUserId);
+    if (!target) throw new NotFoundException('member not found');
+
+    if (target.role === ParticipantRole.admin) {
+      const admins = conversation.participants.filter((p) => p.role === ParticipantRole.admin);
+      if (admins.length === 1) {
+        throw new BadRequestException('cannot remove last admin');
+      }
+    }
+
+    await this.prisma.participant.delete({
+      where: { userId_conversationId: { userId: targetUserId, conversationId } },
+    });
+
+    return this.findById(conversationId, actorUserId);
+  }
+
+  async setMemberRole(
+    conversationId: string,
+    actorUserId: string,
+    targetUserId: string,
+    role: 'admin' | 'member',
+  ): Promise<ConversationWithParticipants> {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
+    if (!conversation) throw new NotFoundException('conversation not found');
+    if (conversation.type !== ConversationType.group)
+      throw new BadRequestException('not a group conversation');
+
+    const actor = conversation.participants.find((p) => p.userId === actorUserId);
+    if (!actor) throw new ForbiddenException('not a participant');
+    if (actor.role !== ParticipantRole.admin) throw new ForbiddenException('not an admin');
+
+    const target = conversation.participants.find((p) => p.userId === targetUserId);
+    if (!target) throw new NotFoundException('member not found');
+
+    if (target.role === ParticipantRole.admin && role === 'member') {
+      const admins = conversation.participants.filter((p) => p.role === ParticipantRole.admin);
+      if (admins.length === 1) {
+        throw new BadRequestException('cannot demote last admin');
+      }
+    }
+
+    if (target.role !== role) {
+      await this.prisma.participant.update({
+        where: { userId_conversationId: { userId: targetUserId, conversationId } },
+        data: { role: role === 'admin' ? ParticipantRole.admin : ParticipantRole.member },
+      });
+    }
+
+    return this.findById(conversationId, actorUserId);
+  }
 }

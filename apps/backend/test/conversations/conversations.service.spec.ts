@@ -19,6 +19,8 @@ describe('ConversationsService', () => {
       participant: {
         findMany: jest.fn(),
         create: jest.fn(),
+        delete: jest.fn(),
+        update: jest.fn(),
       } as any,
     } as any;
 
@@ -96,5 +98,141 @@ describe('ConversationsService', () => {
     });
     const res = await service.update('c3', 'u1', { groupName: 'New' });
     expect(res.groupName).toBe('New');
+  });
+
+  it('addMember lets admin add a new member to group', async () => {
+    const now = new Date();
+    (prisma.conversation!.findUnique as jest.Mock)
+      // first call: in addMember
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [{ userId: 'admin', role: ParticipantRole.admin, joinedAt: now }],
+      })
+      // second call: in findById
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [
+          { userId: 'admin', role: ParticipantRole.admin, joinedAt: now },
+          { userId: 'member', role: ParticipantRole.member, joinedAt: now },
+        ],
+      });
+
+    (prisma.participant!.create as jest.Mock).mockResolvedValueOnce({
+      userId: 'member',
+      conversationId: 'cg',
+      role: ParticipantRole.member,
+      joinedAt: now,
+    });
+
+    const res = await service.addMember('cg', 'admin', 'member');
+    expect(prisma.participant!.create).toHaveBeenCalledWith({
+      data: { userId: 'member', conversationId: 'cg', role: ParticipantRole.member },
+    });
+    expect(res.participants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ userId: 'admin', role: 'admin' }),
+        expect.objectContaining({ userId: 'member', role: 'member' }),
+      ]),
+    );
+  });
+
+  it('removeMember lets admin remove member but not last admin', async () => {
+    const now = new Date();
+    // first call: in removeMember
+    (prisma.conversation!.findUnique as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [
+          { userId: 'admin', role: ParticipantRole.admin, joinedAt: now },
+          { userId: 'member', role: ParticipantRole.member, joinedAt: now },
+        ],
+      })
+      // second call: findById after deletion
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [{ userId: 'admin', role: ParticipantRole.admin, joinedAt: now }],
+      });
+
+    (prisma.participant!.delete as jest.Mock).mockResolvedValueOnce({});
+
+    const res = await service.removeMember('cg', 'admin', 'member');
+
+    expect(prisma.participant!.delete).toHaveBeenCalledWith({
+      where: { userId_conversationId: { userId: 'member', conversationId: 'cg' } },
+    });
+    expect(res.participants).toEqual(
+      expect.arrayContaining([expect.objectContaining({ userId: 'admin', role: 'admin' })]),
+    );
+  });
+
+  it('setMemberRole promotes member to admin', async () => {
+    const now = new Date();
+    (prisma.conversation!.findUnique as jest.Mock)
+      // first call: setMemberRole
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [
+          { userId: 'admin', role: ParticipantRole.admin, joinedAt: now },
+          { userId: 'member', role: ParticipantRole.member, joinedAt: now },
+        ],
+      })
+      // second call: findById
+      .mockResolvedValueOnce({
+        id: 'cg',
+        type: ConversationType.group,
+        groupName: 'G',
+        groupAvatarUrl: null,
+        createdAt: now,
+        updatedAt: now,
+        participants: [
+          { userId: 'admin', role: ParticipantRole.admin, joinedAt: now },
+          { userId: 'member', role: ParticipantRole.admin, joinedAt: now },
+        ],
+      });
+
+    (prisma.participant!.update as jest.Mock).mockResolvedValueOnce({
+      userId: 'member',
+      conversationId: 'cg',
+      role: ParticipantRole.admin,
+      joinedAt: now,
+    });
+
+    const res = await service.setMemberRole('cg', 'admin', 'member', 'admin');
+
+    expect(prisma.participant!.update).toHaveBeenCalledWith({
+      where: { userId_conversationId: { userId: 'member', conversationId: 'cg' } },
+      data: { role: ParticipantRole.admin },
+    });
+    expect(res.participants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ userId: 'admin', role: 'admin' }),
+        expect.objectContaining({ userId: 'member', role: 'admin' }),
+      ]),
+    );
   });
 });
