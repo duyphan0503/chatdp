@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -23,6 +24,8 @@ interface MessageResponse {
   content: string | null;
   mediaUrl: string | null;
   createdAt: Date;
+  replyToMessageId?: string | null;
+  deletedAt?: Date | null;
 }
 
 interface MessageListMappedResponse {
@@ -38,11 +41,33 @@ type MessageEntity = {
   content: string | null;
   mediaUrl: string | null;
   createdAt: Date;
+  replyToMessageId?: string | null;
+  deletedAt?: Date | null;
 };
 
 function mapMessage(m: MessageEntity): MessageResponse {
-  const { id, conversationId, senderId, contentType, content, mediaUrl, createdAt } = m;
-  return { id, conversationId, senderId, contentType, content, mediaUrl, createdAt };
+  const {
+    id,
+    conversationId,
+    senderId,
+    contentType,
+    content,
+    mediaUrl,
+    createdAt,
+    replyToMessageId,
+    deletedAt,
+  } = m;
+  return {
+    id,
+    conversationId,
+    senderId,
+    contentType,
+    content,
+    mediaUrl,
+    createdAt,
+    replyToMessageId,
+    deletedAt,
+  };
 }
 
 @Controller('conversations/:conversationId/messages')
@@ -58,7 +83,7 @@ export class MessagesController {
   ): Promise<MessageResponse> {
     const { userId } = req.user as { userId: string };
     const msg = await this.messages.create(conversationId, userId, dto);
-    return mapMessage(msg);
+    return mapMessage(msg as MessageEntity);
   }
 
   @Get()
@@ -74,6 +99,37 @@ export class MessagesController {
       query.limit ?? 20,
       query.cursor,
     );
-    return { items: items.map(mapMessage), nextCursor };
+    return { items: items.map((m) => mapMessage(m as MessageEntity)), nextCursor };
+  }
+
+  @Post(':messageId/reactions')
+  async addReaction(
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+    @Body('emoji') emoji: string,
+    @Req() req: Request,
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.messages.addReaction(messageId, userId, emoji);
+  }
+
+  @Delete(':messageId/reactions')
+  async removeReaction(
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+    @Body('emoji') emoji: string,
+    @Req() req: Request,
+  ) {
+    const { userId } = req.user as { userId: string };
+    await this.messages.removeReaction(messageId, userId, emoji);
+    return { status: 'ok' };
+  }
+
+  @Delete(':messageId')
+  async softDelete(
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+    @Req() req: Request,
+  ): Promise<MessageResponse> {
+    const { userId } = req.user as { userId: string };
+    const msg = await this.messages.softDelete(messageId, userId);
+    return mapMessage(msg as MessageEntity);
   }
 }
