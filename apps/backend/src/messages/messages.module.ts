@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { MessagesService } from './messages.service.js';
 import { MessagesController } from './messages.controller.js';

@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { MessageCreateDto } from './dto/message-create.dto.js';
 import { MessageListDto } from './dto/message-list.dto.js';
 import type { Request } from 'express';
+import type { Reaction } from '@prisma/client';
 
 interface MessageResponse {
   id: string;
@@ -107,7 +108,7 @@ export class MessagesController {
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
     @Body('emoji') emoji: string,
     @Req() req: Request,
-  ) {
+  ): Promise<Reaction> {
     const { userId } = req.user as { userId: string };
     return this.messages.addReaction(messageId, userId, emoji);
   }
@@ -117,7 +118,7 @@ export class MessagesController {
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
     @Body('emoji') emoji: string,
     @Req() req: Request,
-  ) {
+  ): Promise<{ status: 'ok' }> {
     const { userId } = req.user as { userId: string };
     await this.messages.removeReaction(messageId, userId, emoji);
     return { status: 'ok' };
@@ -129,6 +130,7 @@ export class MessagesController {
     @Req() req: Request,
   ): Promise<MessageResponse> {
     const { userId } = req.user as { userId: string };
+
     const msg = await this.messages.softDelete(messageId, userId);
     return mapMessage(msg as MessageEntity);
   }
