@@ -30,13 +30,12 @@ export class CallService {
    * Per-call timeout handles so we can cancel timeouts on accept/reject/end.
    */
   private readonly ringingTimers = new Map<string, ReturnType<typeof setTimeout>>();
- 
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly calls: CallStateStore,
     private readonly notifications: CallNotificationService,
   ) {}
-
 
   /**
    * Initiate a 1-1 call for the given conversation and caller.
@@ -80,12 +79,11 @@ export class CallService {
       );
       throw new Error('blocked');
     }
- 
+
     // Busy check: one active call per user
     if (this.calls.getByUser(callerId) || this.calls.getByUser(calleeId)) {
       throw new Error('busy');
     }
-
 
     const now = new Date();
     const session: CallSession = {
@@ -98,7 +96,7 @@ export class CallService {
       createdAt: now,
       updatedAt: now,
     };
- 
+
     this.calls.create(session);
     try {
       callsInitiatedTotal.labels(type).inc(1);
@@ -111,12 +109,11 @@ export class CallService {
 
     // Fire-and-forget notification hook for offline callee.
     void this.notifications.notifyIncomingCallIfOffline(session);
- 
+
     // Schedule automatic timeout for unanswered calls.
     this.scheduleRingingTimeout(session.callId);
- 
-    return session;
 
+    return session;
   }
 
   getSession(callId: string): CallSession | undefined {

@@ -70,6 +70,36 @@ export const envSchema = z.object({
 
   // Redis cache URL (optional, Phase 7 - Hardening)
   REDIS_URL: z.string().url().optional(),
+
+  // Media storage (Phase 9 - Media & Groups)
+  // Driver selection: "local" (fake URLs) or "s3" (S3/MinIO-compatible).
+  MEDIA_STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  MEDIA_S3_BUCKET: z.string().optional(),
+  MEDIA_S3_REGION: z.string().optional(),
+  MEDIA_S3_ENDPOINT: z.string().url().optional(),
+  MEDIA_S3_ACCESS_KEY: z.string().optional(),
+  MEDIA_S3_SECRET_KEY: z.string().optional(),
+  // Optional public base URL for serving media (e.g. CDN)
+  MEDIA_PUBLIC_BASE_URL: z.string().url().optional(),
+  // Presigned URL TTL in seconds
+  MEDIA_PRESIGN_EXPIRES_IN: z.coerce.number().int().positive().default(300),
+
+  // Media TTL and R2 quota (soft/hard limits in bytes)
+  MEDIA_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(7 * 24 * 60 * 60),
+  MEDIA_R2_SOFT_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(9 * 1024 * 1024 * 1024),
+  MEDIA_R2_HARD_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 1024 * 1024 * 1024),
 });
 
 // TypeScript type tự động suy ra từ schema (single source of truth)

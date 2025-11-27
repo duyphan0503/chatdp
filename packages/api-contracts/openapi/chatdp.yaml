@@ -162,6 +162,13 @@ components:
         mediaUrl:
           type: string
           nullable: true
+        replyToMessageId:
+          type: string
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -176,6 +183,19 @@ components:
           type: string
           nullable: true
         mediaUrl:
+          type: string
+          nullable: true
+        mediaMimeType:
+          type: string
+          nullable: true
+        mediaSize:
+          type: integer
+          format: int64
+          nullable: true
+        contentId:
+          type: string
+          nullable: true
+        replyToMessageId:
           type: string
           nullable: true
     MessageListResponse:

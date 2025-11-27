@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -12,6 +13,7 @@ import {
 import { ConversationsService, ConversationWithParticipants } from './conversations.service.js';
 import { ConversationCreateDto } from './dto/conversation-create.dto.js';
 import { ConversationUpdateDto } from './dto/conversation-update.dto.js';
+import { GroupMemberAddDto } from './dto/group-member.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import type { Request } from 'express';
 // NOTE: Participants are intentionally omitted from API responses (Phase 4 decision)
@@ -81,6 +83,50 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.update(id, userId, dto);
+    return mapConversation(conv);
+  }
+
+  @Post(':id/members')
+  async addMember(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: GroupMemberAddDto,
+    @Req() req: Request,
+  ): Promise<ConversationResponse> {
+    const { userId } = req.user as { userId: string };
+    const conv = await this.conversations.addMember(id, userId, dto.userId);
+    return mapConversation(conv);
+  }
+
+  @Delete(':id/members/:memberId')
+  async removeMember(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @Req() req: Request,
+  ): Promise<ConversationResponse> {
+    const { userId } = req.user as { userId: string };
+    const conv = await this.conversations.removeMember(id, userId, memberId);
+    return mapConversation(conv);
+  }
+
+  @Post(':id/members/:memberId/promote')
+  async promoteMember(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @Req() req: Request,
+  ): Promise<ConversationResponse> {
+    const { userId } = req.user as { userId: string };
+    const conv = await this.conversations.setMemberRole(id, userId, memberId, 'admin');
+    return mapConversation(conv);
+  }
+
+  @Post(':id/members/:memberId/demote')
+  async demoteMember(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @Req() req: Request,
+  ): Promise<ConversationResponse> {
+    const { userId } = req.user as { userId: string };
+    const conv = await this.conversations.setMemberRole(id, userId, memberId, 'member');
     return mapConversation(conv);
   }
 }

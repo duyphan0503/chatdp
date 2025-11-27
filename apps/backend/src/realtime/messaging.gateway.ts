@@ -8,7 +8,13 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Injectable, Logger, UnauthorizedException, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -21,6 +27,8 @@ import { ConversationLeaveDto } from './dto/conversation-leave.dto.js';
 import { TypingDto } from './dto/typing.dto.js';
 import { MessageNewDto } from './dto/message-new.dto.js';
 import { MessageReadDto } from './dto/message-read.dto.js';
+import { MessageReactionDto } from './dto/message-reaction.dto.js';
+import { MessageDeleteDto } from './dto/message-delete.dto.js';
 import { wsEventsTotal } from '../metrics/metrics.service.js';
 
 interface AccessPayload {
@@ -49,7 +57,6 @@ export class MessagingGateway implements OnGatewayInit, OnGatewayConnection, OnG
     private readonly presence: PresenceRegistry,
     private readonly prisma: PrismaService,
   ) {
-
     // Initialize WS rate limiting deterministically (numeric seconds + count)
     const ttlSecRaw = this.config.get<number>('WS_RATE_LIMIT_TTL', { infer: true });
     const limitRaw = this.config.get<number>('WS_RATE_LIMIT_LIMIT', { infer: true });
@@ -222,7 +229,8 @@ export class MessagingGateway implements OnGatewayInit, OnGatewayConnection, OnG
       return;
     }
     const userId: string = client.data.userId;
-    const { conversationId, contentType, content, mediaUrl } = payload ?? ({} as any);
+    const { conversationId, contentType, content, mediaUrl, replyToMessageId } =
+      payload ?? ({} as any);
     if (!conversationId || !contentType) return;
 
     try {
@@ -230,10 +238,116 @@ export class MessagingGateway implements OnGatewayInit, OnGatewayConnection, OnG
         contentType,
         content,
         mediaUrl,
+        replyToMessageId,
       });
       this.server.to(this.conversationRoom(conversationId)).emit('message:new', { message });
     } catch (e) {
       client.emit('error', { message: (e as Error).message ?? 'failed to send message' });
+    }
+  }
+
+  // Add reaction to a message and broadcast
+  @SubscribeMessage('message:reaction_add')
+  async handleMessageReactionAdd(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MessageReactionDto,
+  ): Promise<void> {
+    this.ensureAuthed(client);
+    if (!this.checkRate(client, 'message:reaction_add')) {
+      this.logger.debug(
+        `Rate limit triggered for message:reaction_add (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`,
+      );
+      client.emit('rate:limit', { event: 'message:reaction_add', retryAfterMs: this.wsRateTtlMs });
+      return;
+    }
+    const userId: string = client.data.userId;
+    const { messageId, emoji } = payload ?? ({} as any);
+    if (!messageId || !emoji) return;
+
+    try {
+      const reaction = await this.messages.addReaction(messageId, userId, emoji);
+      const msg = await this.prisma.message.findUnique({
+        where: { id: messageId },
+        select: { conversationId: true },
+      });
+      if (!msg) {
+        return;
+      }
+      this.server
+        .to(this.conversationRoom(msg.conversationId))
+        .emit('message:reaction_added', { messageId, emoji: reaction.emoji, userId });
+    } catch (e) {
+      client.emit('error', { message: (e as Error).message ?? 'failed to add reaction' });
+    }
+  }
+
+  // Remove reaction from a message and broadcast
+  @SubscribeMessage('message:reaction_remove')
+  async handleMessageReactionRemove(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MessageReactionDto,
+  ): Promise<void> {
+    this.ensureAuthed(client);
+    if (!this.checkRate(client, 'message:reaction_remove')) {
+      this.logger.debug(
+        `Rate limit triggered for message:reaction_remove (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`,
+      );
+      client.emit('rate:limit', {
+        event: 'message:reaction_remove',
+        retryAfterMs: this.wsRateTtlMs,
+      });
+      return;
+    }
+    const userId: string = client.data.userId;
+    const { messageId, emoji } = payload ?? ({} as any);
+    if (!messageId || !emoji) return;
+
+    try {
+      const msg = await this.prisma.message.findUnique({
+        where: { id: messageId },
+        select: { conversationId: true },
+      });
+      if (!msg) {
+        client.emit('error', { message: 'message not found' });
+        return;
+      }
+      await this.messages.removeReaction(messageId, userId, emoji);
+      this.server
+        .to(this.conversationRoom(msg.conversationId))
+        .emit('message:reaction_removed', { messageId, emoji, userId });
+    } catch (e) {
+      client.emit('error', { message: (e as Error).message ?? 'failed to remove reaction' });
+    }
+  }
+
+  // Soft delete a message and broadcast
+  @SubscribeMessage('message:delete')
+  async handleMessageDelete(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MessageDeleteDto,
+  ): Promise<void> {
+    this.ensureAuthed(client);
+    if (!this.checkRate(client, 'message:delete')) {
+      this.logger.debug(
+        `Rate limit triggered for message:delete (user=${client.data.userId}) ttlMs=${this.wsRateTtlMs} limit=${this.wsRateLimit}`,
+      );
+      client.emit('rate:limit', { event: 'message:delete', retryAfterMs: this.wsRateTtlMs });
+      return;
+    }
+    const userId: string = client.data.userId;
+    const { messageId } = payload ?? ({} as any);
+    if (!messageId) return;
+
+    try {
+      const msg = await this.messages.softDelete(messageId, userId);
+      this.server.to(this.conversationRoom(msg.conversationId)).emit('message:deleted', {
+        messageId: msg.id,
+        conversationId: msg.conversationId,
+        deletedAt: msg.deletedAt,
+        senderId: msg.senderId,
+      });
+    } catch (e) {
+      client.emit('error', { message: (e as Error).message ?? 'failed to delete message' });
     }
   }
 
