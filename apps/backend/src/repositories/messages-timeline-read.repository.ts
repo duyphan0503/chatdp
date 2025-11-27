@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { MessagesReadModelDocument } from '../mongo/messages-read-model.store.js';
-import { MongoMessagesReadModelStore } from '../mongo/messages-read-model.store.js';
+import {
+  type MessagesReadModelDocument,
+  type MessagesReadModelStore,
+  MESSAGES_READ_MODEL_STORE,
+} from '../mongo/messages-read-model.store.js';
 import { messageTimelineReadsTotal } from '../metrics/metrics.service.js';
 
 export interface MessagesTimelineRecord {
@@ -52,7 +55,10 @@ export class PostgresMessagesTimelineReadRepository implements MessagesTimelineR
 }
 @Injectable()
 export class MongoMessagesTimelineReadRepository implements MessagesTimelineReadRepository {
-  constructor(private readonly store: MongoMessagesReadModelStore) {}
+  constructor(
+    @Inject(MESSAGES_READ_MODEL_STORE)
+    private readonly store: MessagesReadModelStore,
+  ) {}
   async listConversationMessages(
     conversationId: string,
     limit: number,

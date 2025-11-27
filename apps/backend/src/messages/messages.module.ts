@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../prisma/prisma.module.js';
+import { MongoReadModelModule } from '../mongo/mongo-read-model.module.js';
 import { MessagesService } from './messages.service.js';
 import { MessagesController } from './messages.controller.js';
 import { MessagesReadController } from './messages.read.controller.js';
@@ -18,7 +19,7 @@ import {
 } from '../mongo/messages-read-model.store.js';
 
 @Module({
-  imports: [PrismaModule, PassportModule],
+  imports: [PrismaModule, PassportModule, MongoReadModelModule],
   controllers: [MessagesController, MessagesReadController, MessagesSearchController],
   providers: [
     MessagesService,
