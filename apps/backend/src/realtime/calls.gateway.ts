@@ -17,7 +17,7 @@ import {
 import type { Server, Socket } from 'socket.io';
 import { CallService } from './call.service.js';
 import type { CallType } from './call-state.store.js';
-import { wsEventsTotal } from '../metrics/metrics.service.js';
+import { wsEventsTotal } from '../metrics/index.js';
 import { CallInitiateDto } from './dto/call-initiate.dto.js';
 import { CallAcceptDto } from './dto/call-accept.dto.js';
 import { CallRejectDto } from './dto/call-reject.dto.js';

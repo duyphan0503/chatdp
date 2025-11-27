@@ -7,6 +7,7 @@ import { PrismaMessageSearchRepository } from '../../src/repositories/message-se
 jest.mock('../../src/metrics/index.js', () => ({
   messageSearchRequestsTotal: { labels: () => ({ inc: jest.fn() }) },
   messageSearchDurationSeconds: { labels: () => ({ observe: jest.fn() }) },
+  attachPrismaMetrics: jest.fn(),
 }));
 
 describe('PrismaMessageSearchRepository', () => {

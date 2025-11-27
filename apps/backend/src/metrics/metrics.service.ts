@@ -96,6 +96,34 @@ export const prismaQueriesTotal = new Counter({
 });
 metricsRegistry.registerMetric(prismaQueriesTotal);
 
+// Polyglot persistence (Mongo read model) — projector + read path
+export const messageOutboxProjectorRunsTotal = new Counter({
+  name: 'message_outbox_projector_runs_total',
+  help: 'Total number of MessageOutbox projector runs',
+  labelNames: ['status'], // ok | error
+});
+metricsRegistry.registerMetric(messageOutboxProjectorRunsTotal);
+
+export const messageOutboxItemsProcessedTotal = new Counter({
+  name: 'message_outbox_items_processed_total',
+  help: 'Total number of MessageOutbox items processed by the projector',
+  labelNames: ['outcome'], // processed | failed
+});
+metricsRegistry.registerMetric(messageOutboxItemsProcessedTotal);
+
+export const messageOutboxPending = new Gauge({
+  name: 'message_outbox_pending',
+  help: 'Number of pending MessageOutbox rows waiting to be projected to the read model',
+});
+metricsRegistry.registerMetric(messageOutboxPending);
+
+export const messageTimelineReadsTotal = new Counter({
+  name: 'message_timeline_reads_total',
+  help: 'Total number of message timeline read operations',
+  labelNames: ['source'], // postgres | mongo
+});
+metricsRegistry.registerMetric(messageTimelineReadsTotal);
+
 @Injectable()
 export class MetricsService {
   async getMetricsText(): Promise<string> {

@@ -3,17 +3,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
+import { MessageOutboxRepository } from '../repositories/message-outbox.repository.js';
+import { DeliveryStatus, ContentType, Message, MessageStatus, Reaction } from '@prisma/client';
 import {
-  DeliveryStatus,
-  ContentType,
-  Prisma,
-  Message,
-  MessageStatus,
-  Reaction,
-} from '@prisma/client';
+  type MessagesTimelineReadRepository,
+  MESSAGES_TIMELINE_READ_REPOSITORY,
+} from '../repositories/messages-timeline-read.repository.js';
 import type { Env } from '../config/env.schema.js';
 import { MessageCreateDto } from './dto/message-create.dto.js';
 
@@ -22,6 +21,9 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<Env, true>,
+    private readonly messageOutbox: MessageOutboxRepository,
+    @Inject(MESSAGES_TIMELINE_READ_REPOSITORY)
+    private readonly timelineReadRepo: MessagesTimelineReadRepository,
   ) {}
 
   async create(conversationId: string, senderId: string, dto: MessageCreateDto): Promise<Message> {
@@ -29,6 +31,7 @@ export class MessagesService {
     return this.prisma.$transaction(async (tx) => {
       const conv = await tx.conversation.findUnique({
         where: { id: conversationId },
+
         include: { participants: { select: { userId: true } } },
       });
       if (!conv) throw new NotFoundException('conversation not found');
@@ -93,6 +96,8 @@ export class MessagesService {
       }));
       await tx.messageStatus.createMany({ data: statuses, skipDuplicates: true });
 
+      await this.messageOutbox.enqueueMessageCreated(message, tx);
+
       return message;
     });
   }
@@ -110,22 +115,18 @@ export class MessagesService {
     });
     if (!participant) throw new ForbiddenException('not a participant');
 
-    const take = Math.min(Math.max(limit ?? 20, 1), 100);
-    const baseQuery: Prisma.MessageFindManyArgs = {
-      where: { conversationId },
-      orderBy: { createdAt: 'desc' },
-      take: take + 1,
-    };
-    const rows = await this.prisma.message.findMany(
-      cursor ? { ...baseQuery, cursor: { id: cursor }, skip: 1 } : baseQuery,
+    const { items, nextCursor } = await this.timelineReadRepo.listConversationMessages(
+      conversationId,
+      limit,
+      cursor,
     );
-    const items = rows.slice(0, take);
-    const nextCursor = rows.length > take ? (items[items.length - 1]?.id ?? null) : null;
-    return { items, nextCursor };
+
+    return { items: items as unknown as Message[], nextCursor };
   }
 
   async markRead(
     messageId: string,
+
     userId: string,
   ): Promise<{ message: Message; status: MessageStatus }> {
     const msg = await this.prisma.message.findUnique({
@@ -224,9 +225,13 @@ export class MessagesService {
       return msg;
     }
 
-    return this.prisma.message.update({
+    const updated = await this.prisma.message.update({
       where: { id: messageId },
       data: { deletedAt: new Date(), content: null },
     });
+
+    await this.messageOutbox.enqueueMessageDeleted(updated);
+
+    return updated;
   }
 }

@@ -71,9 +71,22 @@ export const envSchema = z.object({
   // Redis cache URL (optional, Phase 7 - Hardening)
   REDIS_URL: z.string().url().optional(),
 
+  // MongoDB read model (optional, Polyglot Persistence)
+  MONGODB_URI: z.string().optional(),
+  MONGODB_DBNAME: z.string().optional(),
+  USE_MONGO_READ_MODEL: z.coerce.boolean().default(false),
+
+  // Background projector for Mongo read model
+  MONGO_PROJECTOR_ENABLED: z.coerce.boolean().default(true),
+  MONGO_PROJECTOR_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
+  MONGO_PROJECTOR_BATCH_SIZE: z.coerce.number().int().min(1).max(1_000).default(100),
+
   // Media storage (Phase 9 - Media & Groups)
+
   // Driver selection: "local" (fake URLs) or "s3" (S3/MinIO-compatible).
+
   MEDIA_STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+
   MEDIA_S3_BUCKET: z.string().optional(),
   MEDIA_S3_REGION: z.string().optional(),
   MEDIA_S3_ENDPOINT: z.string().url().optional(),
