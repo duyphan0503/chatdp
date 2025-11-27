@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { PrismaMessageSearchRepository } from '../../src/repositories/message-search.repository.js';
@@ -14,7 +15,17 @@ describe('PrismaMessageSearchRepository', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [PrismaService, PrismaMessageSearchRepository],
+      providers: [
+        PrismaService,
+        PrismaMessageSearchRepository,
+        {
+          provide: ConfigService,
+          useValue: {
+            // Return undefined for DATABASE_URL so PrismaService.onModuleInit skips $connect
+            get: jest.fn().mockReturnValue(undefined),
+          },
+        },
+      ],
     }).compile();
 
     repo = moduleRef.get(PrismaMessageSearchRepository);
