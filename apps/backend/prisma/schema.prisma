@@ -86,9 +86,33 @@ model Message {
   replies      Message[]       @relation("MessageReply")
   reactions    Reaction[]
   media        Media[]
+  outboxEvents MessageOutbox[]
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model MessageOutbox {
+  id           String       @id @default(uuid())
+  messageId    String
+  eventType    String
+  payload      Json
+  status       OutboxStatus @default(pending)
+  attempts     Int          @default(0)
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  processedAt  DateTime?
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+enum OutboxStatus {
+  pending
+  processed
+  failed
 }
 
 enum ContentType {

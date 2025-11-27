@@ -8,7 +8,7 @@ import {
   callsInitiatedTotal,
   callsMissedTotal,
   callsRejectedTotal,
-} from '../metrics/metrics.service.js';
+} from '../metrics/index.js';
 
 @Injectable()
 export class CallService {

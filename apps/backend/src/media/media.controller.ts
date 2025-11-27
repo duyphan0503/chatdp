@@ -22,17 +22,10 @@ export class MediaController {
 
   @Post('presign')
   async presign(
-    @Query('fileName') fileName: string,
-    @Query('mime') mime: string,
-    @Query('contentLength') contentLength: string | undefined,
+    @Query() dto: MediaPresignRequestDto,
     @Req() req: Request,
   ): Promise<MediaPresignResponseDto> {
     const { userId } = req.user as { userId: string };
-    const dto: MediaPresignRequestDto = {
-      fileName,
-      mime,
-      contentLength: contentLength ? Number(contentLength) : undefined,
-    };
 
     const result = await this.mediaService.presignUpload({
       fileName: dto.fileName,

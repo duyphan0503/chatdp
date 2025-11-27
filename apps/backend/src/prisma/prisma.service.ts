@@ -2,7 +2,7 @@ import { INestApplication, Injectable, OnModuleDestroy, OnModuleInit } from '@ne
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env.schema.js';
-import { attachPrismaMetrics } from '../metrics/prisma.metrics.plugin.js';
+import { attachPrismaMetrics } from '../metrics/index.js';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

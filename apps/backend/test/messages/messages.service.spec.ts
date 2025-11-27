@@ -6,6 +6,8 @@ describe('MessagesService', () => {
   let service: MessagesService;
   let prisma: jest.Mocked<Partial<PrismaService>>;
   let config: { get: jest.Mock };
+  let messageOutbox: { enqueueMessageCreated: jest.Mock; enqueueMessageDeleted: jest.Mock };
+  let timelineReadRepo: { listConversationMessages: jest.Mock };
 
   beforeEach(() => {
     config = {
@@ -23,6 +25,7 @@ describe('MessagesService', () => {
         create: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
+        update: jest.fn(),
       } as any,
       messageStatus: {
         createMany: jest.fn(),
@@ -37,7 +40,21 @@ describe('MessagesService', () => {
       $transaction: jest.fn(async (cb: (tx: any) => any) => cb(prisma)),
     } as any;
 
-    service = new MessagesService(prisma as PrismaService, config as any);
+    messageOutbox = {
+      enqueueMessageCreated: jest.fn(),
+      enqueueMessageDeleted: jest.fn(),
+    } as any;
+
+    timelineReadRepo = {
+      listConversationMessages: jest.fn().mockResolvedValue({ items: [], nextCursor: null }),
+    };
+
+    service = new MessagesService(
+      prisma as PrismaService,
+      config as any,
+      messageOutbox as any,
+      timelineReadRepo as any,
+    );
   });
 
   it('create sets read for sender and delivered for others', async () => {
@@ -66,6 +83,11 @@ describe('MessagesService', () => {
     );
     // No Media row should be created for pure text messages
     expect(prisma.media!.create).not.toHaveBeenCalled();
+    // Outbox should be enqueued
+    expect(messageOutbox.enqueueMessageCreated).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'm1' }),
+      prisma,
+    );
   });
 
   it('creates a Media row when mediaUrl is provided for non-text message', async () => {
@@ -91,6 +113,11 @@ describe('MessagesService', () => {
       contentId: 'hash123',
     } as any);
 
+    expect(messageOutbox.enqueueMessageCreated).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'm2' }),
+      prisma,
+    );
+
     expect(prisma.media!.create).toHaveBeenCalledWith({
       data: {
         uploaderId: 'u1',
@@ -114,9 +141,10 @@ describe('MessagesService', () => {
       userId: 'u1',
       conversationId: 'c1',
     });
-    (prisma.message!.findMany as jest.Mock).mockResolvedValueOnce([]);
+
     const res = await service.list('c1', 'u1', 10);
-    expect(prisma.message!.findMany).toHaveBeenCalled();
+
+    expect(timelineReadRepo.listConversationMessages).toHaveBeenCalledWith('c1', 10, undefined);
     expect(res).toEqual({ items: [], nextCursor: null });
   });
 

@@ -486,7 +486,8 @@ Tùy chọn: Polyglot Persistence (MongoDB Read Model)
 - Repository phân tách: Write (Postgres) / Read (Mongo)
 - Index Mongo gợi ý: { conversation_id: 1, created_at: -1 }, { sender_id: 1, created_at: -1 }
 - Observability: metrics độ trễ projector, backlog outbox; alert khi vượt ngưỡng
-- Env: MONGODB_URI, MONGODB_DBNAME
+- Env: MONGODB_URI, MONGODB_DBNAME, USE_MONGO_READ_MODEL (bật/tắt sử dụng Mongo read model cho đọc timeline tin nhắn),
+  MONGO_PROJECTOR_ENABLED (bật/tắt runner in-process), MONGO_PROJECTOR_INTERVAL_MS, MONGO_PROJECTOR_BATCH_SIZE
 
 ---
 
