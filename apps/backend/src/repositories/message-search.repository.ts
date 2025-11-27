@@ -133,10 +133,7 @@ export class PrismaMessageSearchRepository extends MessageSearchRepository {
       );
     }
 
-    const whereSql =
-      conditions.length > 0
-        ? Prisma.join(conditions, '\n  AND ')
-        : Prisma.sql`TRUE`;
+    const whereSql = conditions.length > 0 ? Prisma.join(conditions, '\n  AND ') : Prisma.sql`TRUE`;
 
     const start = process.hrtime.bigint();
     let rows: MessageSearchRow[];
@@ -198,8 +195,8 @@ export class PrismaMessageSearchRepository extends MessageSearchRepository {
     }));
 
     let nextCursor: string | undefined;
-    if (hasNext) {
-      const last = slice[slice.length - 1]!;
+    if (hasNext && slice.length > 0) {
+      const last = slice[slice.length - 1];
       nextCursor = encodeCursor({
         createdAt: last.createdAt.toISOString(),
         id: last.id,
