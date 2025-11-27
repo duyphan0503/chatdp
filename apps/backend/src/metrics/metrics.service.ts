@@ -37,6 +37,22 @@ export const wsEventsTotal = new Counter({
 });
 metricsRegistry.registerMetric(wsEventsTotal);
 
+// Message search (Phase 10) — high level metrics
+export const messageSearchRequestsTotal = new Counter({
+  name: 'message_search_requests_total',
+  help: 'Total number of message search requests',
+  labelNames: ['status'], // ok | empty_query | error
+});
+metricsRegistry.registerMetric(messageSearchRequestsTotal);
+
+export const messageSearchDurationSeconds = new Histogram({
+  name: 'message_search_duration_seconds',
+  help: 'Message search duration in seconds',
+  labelNames: ['status'],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2],
+});
+metricsRegistry.registerMetric(messageSearchDurationSeconds);
+
 // Call signaling counters (Phase 8)
 export const callsInitiatedTotal = new Counter({
   name: 'calls_initiated_total',
