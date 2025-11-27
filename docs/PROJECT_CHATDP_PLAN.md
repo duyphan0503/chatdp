@@ -128,6 +128,7 @@ Nest.js đã có cấu trúc module mạnh mẽ, chúng ta sẽ tổ chức nó 
 * `/conversations` (GET) - Lấy danh sách hội thoại.
 * `/conversations` (POST) - Tạo hội thoại mới (1-1 hoặc nhóm).
 * `/conversations/:id/messages` (GET) - Lấy lịch sử tin nhắn (phân trang).
+* `/search/messages` (GET) - Tìm kiếm tin nhắn trong các cuộc hội thoại mà người dùng có quyền truy cập (PostgreSQL full-text search theo nội dung, phân trang cursor).
 * `/media/upload` (POST) - Tải lên ảnh/video, trả về URL.
 
 ### 5.2. WebSocket Events (Phase 5 Implemented)

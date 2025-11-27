@@ -26,6 +26,10 @@ try {
   if (!process.env.DATABASE_URL) {
     process.env.DATABASE_URL = 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public';
   }
+
+  // Relax HTTP rate limiting for E2E runs to avoid flakiness
+  if (!process.env.RATE_LIMIT_TTL) process.env.RATE_LIMIT_TTL = '60';
+  if (!process.env.RATE_LIMIT_LIMIT) process.env.RATE_LIMIT_LIMIT = '500';
 } catch (e) {
   // eslint-disable-next-line no-console
   console.warn('[jest-setup] Failed to provision test env:', e && e.message);
