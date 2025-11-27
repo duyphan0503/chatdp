@@ -175,4 +175,3 @@ describe('MessageOutboxProjectorRunner', () => {
     await tick2;
   });
 });
-

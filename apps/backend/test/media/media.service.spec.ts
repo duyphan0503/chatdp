@@ -44,10 +44,10 @@ describe('MediaService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
     } as any;
- 
+
     const service = new MediaService(storage as any, quota, prisma);
     await service.markAccessed('m1', 'u1');
- 
+
     expect(prisma.media.findUnique).toHaveBeenCalledWith({
       where: { id: 'm1' },
       include: { conversation: { include: { participants: true } } },
@@ -57,7 +57,7 @@ describe('MediaService', () => {
       data: { lastAccessAt: expect.any(Date) },
     });
   });
- 
+
   it('markAccessed updates lastAccessAt for conversation participant', async () => {
     const storage = new StubMediaStorage();
     const quota = { enforceQuotaForUpload: jest.fn().mockResolvedValue(undefined) } as any;
@@ -74,16 +74,16 @@ describe('MediaService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
     } as any;
- 
+
     const service = new MediaService(storage as any, quota, prisma);
     await service.markAccessed('m2', 'u2');
- 
+
     expect(prisma.media.update).toHaveBeenCalledWith({
       where: { id: 'm2' },
       data: { lastAccessAt: expect.any(Date) },
     });
   });
- 
+
   it('markAccessed throws ForbiddenException for unauthorized user', async () => {
     const storage = new StubMediaStorage();
     const quota = { enforceQuotaForUpload: jest.fn().mockResolvedValue(undefined) } as any;
@@ -102,13 +102,13 @@ describe('MediaService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
     } as any;
- 
+
     const service = new MediaService(storage as any, quota, prisma);
- 
+
     await expect(service.markAccessed('m3', 'intruder')).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.media.update).not.toHaveBeenCalled();
   });
- 
+
   it('markAccessed deletes R2 object and updates metadata for cloud-backed media', async () => {
     const storage: MediaStorage = {
       createPresignedUpload: async () => ({
@@ -118,7 +118,7 @@ describe('MediaService', () => {
       }),
       deleteObject: jest.fn().mockResolvedValue(undefined),
     };
- 
+
     const quota = { enforceQuotaForUpload: jest.fn().mockResolvedValue(undefined) } as any;
     const prisma = {
       media: {
@@ -136,15 +136,15 @@ describe('MediaService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
     } as any;
- 
+
     const service = new MediaService(storage as any, quota, prisma);
     await service.markAccessed('m4', 'u1');
- 
-    expect((storage.deleteObject as jest.Mock)).toHaveBeenCalledWith({
+
+    expect(storage.deleteObject as jest.Mock).toHaveBeenCalledWith({
       url: 'https://example.com/uploads/u1/file.png',
       objectKey: 'uploads/u1/file.png',
     });
- 
+
     expect(prisma.media.update).toHaveBeenCalledWith({
       where: { id: 'm4' },
       data: {
@@ -156,4 +156,3 @@ describe('MediaService', () => {
     });
   });
 });
-

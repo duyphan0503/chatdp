@@ -55,7 +55,6 @@ describe('MessagesService', () => {
       messageOutbox as any,
       timelineReadRepo as any,
     );
-
   });
 
   it('create sets read for sender and delivered for others', async () => {

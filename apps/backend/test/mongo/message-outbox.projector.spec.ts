@@ -73,7 +73,6 @@ describe('MessageOutboxProjector', () => {
     expect(store.markDeleted).not.toHaveBeenCalled();
   });
 
-
   it('processes message_created events and marks them processed', async () => {
     const row = {
       id: 'o1',
@@ -236,4 +235,3 @@ describe('MessageOutboxProjector', () => {
     });
   });
 });
-

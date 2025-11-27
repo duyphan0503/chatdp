@@ -1,4 +1,7 @@
-import { PostgresMessagesTimelineReadRepository, MongoMessagesTimelineReadRepository } from '../../src/repositories/messages-timeline-read.repository.js';
+import {
+  PostgresMessagesTimelineReadRepository,
+  MongoMessagesTimelineReadRepository,
+} from '../../src/repositories/messages-timeline-read.repository.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import {
   type MessagesReadModelDocument,
@@ -12,10 +15,7 @@ describe('MessagesTimelineReadRepository', () => {
     it('uses cursor pagination with createdAt desc', async () => {
       const prisma = {
         message: {
-          findMany: jest.fn().mockResolvedValueOnce([
-            { id: 'm1' },
-            { id: 'm2' },
-          ]),
+          findMany: jest.fn().mockResolvedValueOnce([{ id: 'm1' }, { id: 'm2' }]),
         },
       } as any as PrismaService;
 
@@ -107,7 +107,9 @@ describe('MessagesTimelineReadRepository', () => {
         markDeleted: jest.fn(),
       } as any);
 
-      const selected = ((): PostgresMessagesTimelineReadRepository | MongoMessagesTimelineReadRepository => {
+      const selected = (():
+        | PostgresMessagesTimelineReadRepository
+        | MongoMessagesTimelineReadRepository => {
         if (store instanceof NoopMessagesReadModelStore) {
           return pgRepo;
         }
@@ -128,7 +130,9 @@ describe('MessagesTimelineReadRepository', () => {
         markDeleted: jest.fn(),
       } as any);
 
-      const selected = ((): PostgresMessagesTimelineReadRepository | MongoMessagesTimelineReadRepository => {
+      const selected = (():
+        | PostgresMessagesTimelineReadRepository
+        | MongoMessagesTimelineReadRepository => {
         if (store instanceof NoopMessagesReadModelStore) {
           return pgRepo;
         }
