@@ -37,7 +37,7 @@ export const wsEventsTotal = new Counter({
 });
 metricsRegistry.registerMetric(wsEventsTotal);
 
-// Message search (Phase 10) — high level metrics
+// Message search (Phase 10) - high level metrics
 export const messageSearchRequestsTotal = new Counter({
   name: 'message_search_requests_total',
   help: 'Total number of message search requests',
@@ -96,7 +96,7 @@ export const prismaQueriesTotal = new Counter({
 });
 metricsRegistry.registerMetric(prismaQueriesTotal);
 
-// Polyglot persistence (Mongo read model) — projector + read path
+// Polyglot persistence (Mongo read model) - projector + read path
 export const messageOutboxProjectorRunsTotal = new Counter({
   name: 'message_outbox_projector_runs_total',
   help: 'Total number of MessageOutbox projector runs',

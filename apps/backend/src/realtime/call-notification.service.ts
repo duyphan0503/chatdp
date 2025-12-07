@@ -3,7 +3,7 @@ import type { CallSession } from './call-state.store.js';
 import { PresenceRegistry } from './presence.registry.js';
 
 /**
- * Phase 8  Abstraction for call-related push notifications.
+ * Phase 8 - Abstraction for call-related push notifications.
  *
  * For now this is a stub that only logs when an incoming call targets an
  * offline callee. A concrete FCM/APNS implementation can be plugged in later
@@ -25,7 +25,7 @@ export class CallNotificationService {
     const { calleeId, callId, conversationId, type } = session;
     const online = this.presence.isOnline(calleeId);
     if (online) {
-      // Active WS connections exist  rely on realtime signaling instead.
+      // Active WS connections exist - rely on realtime signaling instead.
       return;
     }
 

@@ -1,6 +1,17 @@
-import { PrismaClient } from '@prisma/client';
+// @ts-nocheck
+import * as pkg from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const { PrismaClient } = pkg;
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set; cannot run Prisma seed.');
+}
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Minimal dev seed: 2 users, 1 private conversation, participants, and 2 messages

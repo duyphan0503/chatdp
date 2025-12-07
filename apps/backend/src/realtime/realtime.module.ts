@@ -9,9 +9,18 @@ import { CallService } from './call.service.js';
 import { CallStateStore } from './call-state.store.js';
 import { CallNotificationService } from './call-notification.service.js';
 
-// Phase 5  Realtime/WebSocket
-// Provides messaging gateway + presence registry. Adapter abstraction left for later (Redis).
-// Phase 8  Calls signaling (WebRTC) adds CallsGateway + CallService on top.
+/**
+ * Realtime module wiring WebSocket gateways and supporting services.
+ *
+ * Responsibilities:
+ * - MessagingGateway: chat message events and presence updates over WebSocket.
+ * - PresenceRegistry: in-memory tracking of online users and active connections.
+ * - CallsGateway/CallService: signaling layer for voice/video calls (WebRTC).
+ * - CallStateStore/CallNotificationService: manage call lifecycle and notifications.
+ *
+ * Transport adapters (e.g. Redis for scaling out gateways) can be plugged in later
+ * without changing the public gateway contracts.
+ */
 @Module({
   imports: [AuthModule, MessagesModule, PrismaModule],
   providers: [

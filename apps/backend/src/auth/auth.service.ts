@@ -23,6 +23,16 @@ export interface AuthTokens {
 
 type RefreshContext = { userAgent?: string | null; ip?: string | null };
 
+/**
+ * Domain service for user authentication, token issuance and refresh token
+ * lifecycle management.
+ *
+ * Responsibilities:
+ * - Sign up users with hashed passwords.
+ * - Authenticate credentials and issue JWT access/refresh tokens.
+ * - Persist and rotate refresh tokens with DB-backed revocation.
+ * - Enforce optional binding of refresh tokens to user agent and IP.
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -32,6 +42,13 @@ export class AuthService {
     private readonly refreshTokens: RefreshTokenRepository,
   ) {}
 
+  /**
+   * Registers a new user and returns initial access/refresh tokens.
+   *
+   * @param params Email, plaintext password and display name.
+   * @param ctx Optional context for binding the refresh token (UA/IP).
+   * @throws ConflictException if the email is already registered.
+   */
   async signup(
     params: {
       email: string;
@@ -52,6 +69,13 @@ export class AuthService {
     return this.issueTokens(user, ctx);
   }
 
+  /**
+   * Authenticates a user by email and password and issues tokens.
+   *
+   * @param params Email and plaintext password.
+   * @param ctx Optional context for binding the refresh token (UA/IP).
+   * @throws UnauthorizedException when credentials are invalid.
+   */
   async login(
     params: { email: string; password: string },
     ctx?: RefreshContext,
@@ -65,6 +89,15 @@ export class AuthService {
     return this.issueTokens(user, ctx);
   }
 
+  /**
+   * Validates and rotates a refresh token, enforcing revocation and optional
+   * UA/IP binding, and returns a new access/refresh pair.
+   *
+   * @param refreshToken Raw refresh token presented by the client.
+   * @param ctx Optional context with user agent and IP for binding checks.
+   * @throws UnauthorizedException when the token is invalid, expired, revoked
+   *         or bound to a different UA/IP (depending on configuration).
+   */
   async refresh(refreshToken: string, ctx?: RefreshContext): Promise<AuthTokens> {
     const secret = this.config.get<string>('JWT_SECRET');
     if (!secret) {
@@ -103,6 +136,12 @@ export class AuthService {
     return this.issueTokens(user, ctx);
   }
 
+  /**
+   * Revokes a refresh token if it exists and is still active.
+   *
+   * Errors during verification are intentionally swallowed so that callers do
+   * not learn whether a token was valid, keeping logout idempotent.
+   */
   async logout(refreshToken: string): Promise<void> {
     const secret = this.config.get<string>('JWT_SECRET');
     if (!secret) {

@@ -25,9 +25,13 @@ import { CallEndDto } from './dto/call-end.dto.js';
 import { CallIceCandidateDto } from './dto/call-ice-candidate.dto.js';
 import { ConfigService } from '@nestjs/config';
 
-// Phase 8  Calls Signaling (WebRTC)
-// This gateway assumes that MessagingGateway has already authenticated the
-// socket and attached userId to socket.data.userId.
+/**
+ * WebSocket gateway responsible for WebRTC call signaling.
+ *
+ * Assumes that the MessagingGateway has already authenticated the socket and
+ * populated client.data.userId. Exposes initiate/accept/reject/end and ICE
+ * candidate events, applying basic per-user rate limiting.
+ */
 @WebSocketGateway({ namespace: '/ws', cors: { origin: true, credentials: true } })
 @Injectable()
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))

@@ -10,12 +10,9 @@ export class UsersService {
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
-  async getById(id: string): Promise<UserRecord | null> {
-    return this.users.findById(id);
-  }
-
   async getCachedById(id: string): Promise<UserRecord | null> {
     const cacheKey = `user:by-id:${id}`;
+
     const cached = (await this.cache.get<UserRecord | null>(cacheKey)) ?? null;
     if (cached) return cached;
 

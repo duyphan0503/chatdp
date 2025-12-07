@@ -8,6 +8,7 @@ coverage/
 .prisma/
 .idea/
 AGENTS.md
+*.postman_environment.json
 
 # Flutter
 **/build/

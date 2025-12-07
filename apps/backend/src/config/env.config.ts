@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './env.validate.js';
 
-// Giữ nguyên cơ chế chọn file .env
+// Preserve the default .env file resolution mechanism
 function resolveEnvPaths(): string[] {
   return ['apps/backend/.env', '.env'];
 }
@@ -12,7 +12,7 @@ function resolveEnvPaths(): string[] {
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: resolveEnvPaths(),
-      // Fail-fast qua Zod schema
+      // Fail fast via Zod schema validation
       validate,
     }),
   ],

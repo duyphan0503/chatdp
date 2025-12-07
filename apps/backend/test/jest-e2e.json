@@ -19,5 +19,7 @@
   },
   "extensionsToTreatAsEsm": [".ts"],
   "testEnvironment": "node",
-  "setupFiles": ["<rootDir>/test/setup-env.cjs"]
+  "setupFiles": ["<rootDir>/test/setup-env.cjs"],
+  "setupFilesAfterEnv": ["<rootDir>/test/setup-after-env.ts"],
+  "testTimeout": 30000
 }

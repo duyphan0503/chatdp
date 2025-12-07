@@ -27,15 +27,15 @@ export class S3MediaStorage implements MediaStorage {
   private readonly logger = new Logger(S3MediaStorage.name);
 
   constructor(private readonly config: ConfigService<Env, true>) {
-    const driver = config.get('MEDIA_STORAGE_DRIVER', { infer: true });
+    const driver = this.config.get('MEDIA_STORAGE_DRIVER', { infer: true });
 
-    this.bucket = config.get('MEDIA_S3_BUCKET', { infer: true }) ?? '';
-    const region = config.get('MEDIA_S3_REGION', { infer: true });
-    this.endpoint = config.get('MEDIA_S3_ENDPOINT', { infer: true });
-    const accessKeyId = config.get('MEDIA_S3_ACCESS_KEY', { infer: true });
-    const secretAccessKey = config.get('MEDIA_S3_SECRET_KEY', { infer: true });
-    this.publicBaseUrl = config.get('MEDIA_PUBLIC_BASE_URL', { infer: true });
-    this.presignExpiresIn = config.get('MEDIA_PRESIGN_EXPIRES_IN', { infer: true });
+    this.bucket = this.config.get('MEDIA_S3_BUCKET', { infer: true }) ?? '';
+    const region = this.config.get('MEDIA_S3_REGION', { infer: true });
+    this.endpoint = this.config.get('MEDIA_S3_ENDPOINT', { infer: true });
+    const accessKeyId = this.config.get('MEDIA_S3_ACCESS_KEY', { infer: true });
+    const secretAccessKey = this.config.get('MEDIA_S3_SECRET_KEY', { infer: true });
+    this.publicBaseUrl = this.config.get('MEDIA_PUBLIC_BASE_URL', { infer: true });
+    this.presignExpiresIn = this.config.get('MEDIA_PRESIGN_EXPIRES_IN', { infer: true });
 
     // Only enforce strict requirements when driver is actually s3
     if (driver === 's3') {

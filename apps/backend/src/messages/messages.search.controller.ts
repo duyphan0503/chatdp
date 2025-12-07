@@ -19,11 +19,18 @@ interface MessageSearchResponse {
   nextCursor?: string;
 }
 
+/**
+ * Search HTTP endpoints for messages, with full-text and filter support.
+ */
 @UseGuards(JwtAuthGuard)
 @Controller('search')
 export class MessagesSearchController {
   constructor(private readonly searchRepo: PrismaMessageSearchRepository) {}
 
+  /**
+   * Performs a paginated search over messages visible to the authenticated
+   * user, using optional conversation, sender and time-range filters.
+   */
   @Get('messages')
   async searchMessages(
     @Query() query: MessageSearchDto,

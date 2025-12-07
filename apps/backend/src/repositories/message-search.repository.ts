@@ -137,6 +137,7 @@ export class PrismaMessageSearchRepository extends MessageSearchRepository {
 
     const start = process.hrtime.bigint();
     let rows: MessageSearchRow[];
+    let status: 'ok' | 'error' = 'ok';
 
     try {
       rows = await this.prisma.$queryRaw<MessageSearchRow[]>`
@@ -158,25 +159,18 @@ export class PrismaMessageSearchRepository extends MessageSearchRepository {
           m."id" DESC
         LIMIT ${effectiveLimit + 1}
       `;
-
-      try {
-        const end = process.hrtime.bigint();
-        const durationSec = Number(end - start) / 1e9;
-        messageSearchDurationSeconds.labels('ok').observe(durationSec);
-        messageSearchRequestsTotal.labels('ok').inc();
-      } catch {
-        // ignore metrics errors
-      }
     } catch (err) {
+      status = 'error';
+      throw err;
+    } finally {
       try {
         const end = process.hrtime.bigint();
         const durationSec = Number(end - start) / 1e9;
-        messageSearchDurationSeconds.labels('error').observe(durationSec);
-        messageSearchRequestsTotal.labels('error').inc();
+        messageSearchDurationSeconds.labels(status).observe(durationSec);
+        messageSearchRequestsTotal.labels(status).inc();
       } catch {
         // ignore metrics errors
       }
-      throw err;
     }
 
     const hasNext = rows.length > effectiveLimit;
