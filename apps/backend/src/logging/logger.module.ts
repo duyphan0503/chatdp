@@ -37,7 +37,7 @@ export class CorrelatedLogger implements LoggerService {
     try {
       process.stdout.write(`${JSON.stringify(payload)}\n`);
     } catch {
-      // eslint-disable-next-line no-console
+      // Fallback in environments where stdout is not writable.
       console.log('[CorrelatedLogger-fallback]', level, cid, message, ...optionalParams);
     }
   }
@@ -62,6 +62,7 @@ export class CorrelatedLogger implements LoggerService {
     this.write('trace', message, optionalParams);
   }
 }
+
 @Global()
 @Module({
   providers: [CorrelatedLogger],

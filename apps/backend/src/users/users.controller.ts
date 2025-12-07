@@ -9,10 +9,16 @@ interface JwtUserRequest {
   };
 }
 
+/**
+ * HTTP endpoints for user-facing profile information.
+ */
 @Controller()
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
+  /**
+   * Returns the id and email of the currently authenticated user.
+   */
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@Req() req: JwtUserRequest): { id: string; email: string | null } {
@@ -20,6 +26,10 @@ export class UsersController {
     return { id: userId, email: email ?? null } as const;
   }
 
+  /**
+   * Returns a minimal public profile (id and email) for the given user id,
+   * or 404 if the user does not exist.
+   */
   @UseGuards(JwtAuthGuard)
   @Get('users/profile/:id')
   async getProfile(@Param('id') id: string): Promise<{ id: string; email: string | null }> {

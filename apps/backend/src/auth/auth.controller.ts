@@ -28,10 +28,23 @@ function extractClientIp(req: Request): string | null {
   return req.ip ?? null;
 }
 
+/**
+ * HTTP endpoints for user authentication and token management.
+ *
+ * Exposes signup, login, refresh and logout flows. Each handler enriches
+ * the call with user agent and client IP metadata when available so that
+ * refresh token binding and audit logic in AuthService can make decisions.
+ */
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  /**
+   * Registers a new user account and issues initial access/refresh tokens.
+   *
+   * @param body Validated signup payload including email, password and display name.
+   * @param req Incoming HTTP request used to extract user agent and client IP.
+   */
   @Post('signup')
   async signup(@Body() body: SignupDto, @Req() req: Request): Promise<AuthTokens> {
     const ua = headerValue(req.headers['user-agent']);
@@ -45,6 +58,13 @@ export class AuthController {
     );
   }
 
+  /**
+   * Authenticates a user by email and password and returns JWT access/refresh
+   * tokens. Rate limited to mitigate brute-force attempts.
+   *
+   * @param body Login credentials.
+   * @param req HTTP request used to extract user agent and client IP.
+   */
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -56,6 +76,12 @@ export class AuthController {
     );
   }
 
+  /**
+   * Rotates a valid refresh token and returns a fresh access/refresh pair.
+   *
+   * Binding checks (user agent, IP) are delegated to AuthService based on
+   * configuration. Rate limited to protect against abuse.
+   */
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
@@ -67,6 +93,12 @@ export class AuthController {
     });
   }
 
+  /**
+   * Revokes a refresh token if it is still active and returns a success flag.
+   *
+   * The endpoint is intentionally idempotent and does not reveal whether the
+   * provided token was valid or already revoked.
+   */
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('logout')

@@ -143,11 +143,9 @@ describe('Search messages (e2e)', () => {
       .send({ type: 'private', participantUserIds: [bobId] })
       .expect(201);
     const conversationId = convRes.body.id as string;
-
     // Create >10 messages containing the same keyword
     for (let i = 0; i < 12; i++) {
       // Small delay between requests to avoid tripping any HTTP rate limiting in tests
-      // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => setTimeout(resolve, 25));
 
       await request(app.getHttpServer())
@@ -158,6 +156,7 @@ describe('Search messages (e2e)', () => {
     }
 
     // First page with limit=5
+
     const firstPage = await request(app.getHttpServer())
       .get('/api/search/messages')
       .set('Authorization', `Bearer ${bobToken}`)

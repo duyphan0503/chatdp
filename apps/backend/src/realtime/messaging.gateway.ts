@@ -29,7 +29,7 @@ import { MessageNewDto } from './dto/message-new.dto.js';
 import { MessageReadDto } from './dto/message-read.dto.js';
 import { MessageReactionDto } from './dto/message-reaction.dto.js';
 import { MessageDeleteDto } from './dto/message-delete.dto.js';
-import { wsEventsTotal } from '../metrics/metrics.service.js';
+import { wsEventsTotal } from '../metrics/index.js';
 
 interface AccessPayload {
   sub: string; // userId
@@ -38,6 +38,15 @@ interface AccessPayload {
   typ?: string; // should be 'access'
 }
 
+/**
+ * Primary WebSocket gateway for chat messaging and presence.
+ *
+ * Responsibilities:
+ * - Authenticates sockets using JWT access tokens.
+ * - Manages presence and per-conversation room membership.
+ * - Handles realtime events such as typing, new messages, read receipts
+ *   and reactions with basic in-memory rate limiting.
+ */
 @WebSocketGateway({ namespace: '/ws', cors: { origin: true, credentials: true } })
 @Injectable()
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))

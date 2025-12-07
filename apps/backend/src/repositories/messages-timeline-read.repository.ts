@@ -5,7 +5,7 @@ import {
   type MessagesReadModelStore,
   MESSAGES_READ_MODEL_STORE,
 } from '../mongo/messages-read-model.store.js';
-import { messageTimelineReadsTotal } from '../metrics/metrics.service.js';
+import { messageTimelineReadsTotal } from '../metrics/index.js';
 
 export interface MessagesTimelineRecord {
   id: string;

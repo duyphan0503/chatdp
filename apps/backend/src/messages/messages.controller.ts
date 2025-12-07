@@ -71,11 +71,22 @@ function mapMessage(m: MessageEntity): MessageResponse {
   };
 }
 
+/**
+ * HTTP endpoints for managing messages within a conversation.
+ *
+ * Provides creation, listing with cursor-based pagination, reactions and
+ * soft deletion. All routes are protected by JWT auth and operate on the
+ * authenticated user extracted from the request.
+ */
 @Controller('conversations/:conversationId/messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
   constructor(private readonly messages: MessagesService) {}
 
+  /**
+   * Creates a new message in the specified conversation on behalf of the
+   * authenticated user.
+   */
   @Post()
   async create(
     @Param('conversationId', new ParseUUIDPipe({ version: '4' })) conversationId: string,
@@ -87,6 +98,10 @@ export class MessagesController {
     return mapMessage(msg as MessageEntity);
   }
 
+  /**
+   * Returns a page of messages for a conversation, ordered by creation time
+   * and using a cursor token for pagination.
+   */
   @Get()
   async list(
     @Param('conversationId', new ParseUUIDPipe({ version: '4' })) conversationId: string,
@@ -103,6 +118,9 @@ export class MessagesController {
     return { items: items.map((m) => mapMessage(m as MessageEntity)), nextCursor };
   }
 
+  /**
+   * Adds a reaction emoji from the authenticated user to a message.
+   */
   @Post(':messageId/reactions')
   async addReaction(
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
@@ -113,6 +131,9 @@ export class MessagesController {
     return this.messages.addReaction(messageId, userId, emoji);
   }
 
+  /**
+   * Removes a reaction emoji previously added by the authenticated user.
+   */
   @Delete(':messageId/reactions')
   async removeReaction(
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
@@ -124,6 +145,10 @@ export class MessagesController {
     return { status: 'ok' };
   }
 
+  /**
+   * Soft-deletes a message for the conversation while preserving its record
+   * for audit/history purposes.
+   */
   @Delete(':messageId')
   async softDelete(
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,

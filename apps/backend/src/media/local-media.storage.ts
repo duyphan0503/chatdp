@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { MediaStorage, PresignedUpload } from './media.service.js';
 
 // NOTE: This is a placeholder storage adapter.
-// In production, replace with S3/MinIO implementation that uses env-driven config.
+// It is intended *only* for local development / tests to exercise
+// the HTTP contract without touching real storage.
+//
+// In production, always use the S3/MinIO (R2) adapter via
+// MEDIA_STORAGE_DRIVER=s3. The hybrid media architecture defines
+// Local-First as a client-side concern; the backend should not
+// pretend to store media on user devices via this adapter.
 @Injectable()
 export class LocalMediaStorage implements MediaStorage {
   async createPresignedUpload(params: {

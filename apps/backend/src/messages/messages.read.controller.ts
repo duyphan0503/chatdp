@@ -48,11 +48,18 @@ function mapStatus(s: {
   return { messageId, userId, status, readAt };
 }
 
+/**
+ * HTTP endpoints for read receipts and message delivery status.
+ */
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class MessagesReadController {
   constructor(private readonly messages: MessagesService) {}
 
+  /**
+   * Marks a message as read by the authenticated user and returns the
+   * updated message plus the associated status record.
+   */
   @Post('messages/:messageId/read')
   async markRead(
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
@@ -63,6 +70,10 @@ export class MessagesReadController {
     return { message: mapMessage(message), status: mapStatus(status) };
   }
 
+  /**
+   * Returns delivery/read statuses for a message, scoped to the
+   * conversations the authenticated user can access.
+   */
   @Get('messages/:messageId/status')
   async getStatuses(
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,

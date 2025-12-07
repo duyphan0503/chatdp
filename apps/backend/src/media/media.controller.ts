@@ -13,13 +13,21 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { MediaService } from './media.service.js';
 import { MediaPresignRequestDto, MediaPresignResponseDto } from './dto/media-presign.dto.js';
 
-// Phase 9 — Media Upload
-// This controller issues presigned URLs (S3/MinIO) for uploads.
+/**
+ * HTTP endpoints for media upload and access tracking.
+ *
+ * Issues presigned URLs for object storage uploads (e.g. S3/MinIO) and
+ * records when media objects are accessed by users.
+ */
 @Controller('media')
 @UseGuards(JwtAuthGuard)
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
+  /**
+   * Returns a presigned upload URL plus a public download URL for a new
+   * media object owned by the authenticated user.
+   */
   @Post('presign')
   async presign(
     @Query() dto: MediaPresignRequestDto,
@@ -41,6 +49,10 @@ export class MediaController {
     };
   }
 
+  /**
+   * Marks a media object as accessed by the authenticated user so that
+   * access timestamps and optional quotas can be maintained.
+   */
   @Post(':id/accessed')
   @HttpCode(200)
   async markAccessed(

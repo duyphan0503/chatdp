@@ -54,6 +54,13 @@ import { MongoReadModelModule } from './mongo/mongo-read-model.module.js';
           return throttlers;
         }
 
+        // In test environments we prefer in-memory throttling even when
+        // REDIS_URL is configured, to avoid coupling E2E tests to an
+        // external Redis instance that may not be reachable.
+        if (process.env.NODE_ENV === 'test') {
+          return throttlers;
+        }
+
         // When REDIS_URL is set, use shared Redis-backed storage.
         const client = new Redis(redisUrl);
         const storage = new RedisThrottlerStorage(client, { prefix: 'throttle' });
@@ -64,19 +71,19 @@ import { MongoReadModelModule } from './mongo/mongo-read-model.module.js';
         };
       },
     }),
-    // Phase 2: Prisma module (global)
+    // Persistence and core services
     PrismaModule,
-    // Phase 3: Auth & Users modules
+    // Authentication and user management
     AuthModule,
     UsersModule,
-    // Phase 4: Conversations & Messages modules
+    // Conversations and messaging API
     ConversationsModule,
     MessagesModule,
-    // Phase 5: Realtime/WebSocket module
+    // Realtime/WebSocket signalling and subscriptions
     RealtimeModule,
-    // Phase 9: Media module
+    // Media upload and retrieval
     MediaModule,
-    // Polyglot persistence: MongoDB read model (optional)
+    // Optional MongoDB read model for fast timelines
     MongoReadModelModule,
   ],
   controllers: [HealthController, MetricsController],

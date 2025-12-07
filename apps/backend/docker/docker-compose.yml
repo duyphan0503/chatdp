@@ -1,14 +1,94 @@
-version: '3.9'
+name: chatdp
 services:
-  db:
-    image: postgres:16-alpine
+  postgres:
+    image: postgres:18.1
+    container_name: chatdp-postgres
     environment:
-      POSTGRES_USER: chatdp
-      POSTGRES_PASSWORD: chatdp
-      POSTGRES_DB: chatdp
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - '5432:5432'
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - chatdp-infra
+
+  mongodb:
+    image: mongo:8.2
+    container_name: chatdp-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - chatdp-infra
+
+  redis:
+    image: redis:8.4
+    container_name: chatdp-redis
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - chatdp-infra
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.7.0
+    container_name: chatdp-cloudflared
+    restart: unless-stopped
+    # This tunnel can route to all three internal services over the
+    # shared "chatdp-infra" network:
+    #   - postgres:5432
+    #   - mongodb:27017
+    #   - redis:6379
+    # The actual hostname -> service mappings are configured in
+    # Cloudflare's dashboard for this tunnel.
+    environment:
+      TUNNEL_SERVICE_POSTGRES: postgres:5432
+      TUNNEL_SERVICE_MONGODB: mongodb:27017
+      TUNNEL_SERVICE_REDIS: redis:6379
+      CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    networks:
+      - chatdp-infra
+
+  chatdp-backend:
+    image: node:22-alpine
+    container_name: chatdp-backend
+    working_dir: /app
+    command: sh -c "npm install -g npm@11.6.4 && npm i -g pnpm@10.20.0 && pnpm install --no-frozen-lockfile && pnpm --filter @chatdp/backend prisma:migrate:deploy && pnpm --filter @chatdp/backend prisma:generate && pnpm --filter @chatdp/backend prisma:seed && pnpm dev:backend"
+    environment:
+     CI: "true"
+    ports:
+     - "3000:3000"
+    env_file:
+     - ../.env
+    volumes:
+     # Mount monorepo root into /app so package.json is available for pnpm
+     - ../../..:/app
+    depends_on:
+     - postgres
+     - mongodb
+     - redis
+    networks:
+     - chatdp-infra
+
+
 volumes:
-  db_data:
+  postgres_data:
+  mongo_data:
+  redis_data:
+
+networks:
+  chatdp-infra:

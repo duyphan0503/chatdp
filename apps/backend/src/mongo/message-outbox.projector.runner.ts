@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../config/env.schema.js';
-import { messageOutboxProjectorRunsTotal } from '../metrics/metrics.service.js';
+import { messageOutboxProjectorRunsTotal } from '../metrics/index.js';
 import {
   MESSAGES_READ_MODEL_STORE,
   MongoMessagesReadModelStore,

@@ -6,4 +6,8 @@ onlyBuiltDependencies:
   - '@nestjs/core'
   - '@prisma/client'
   - '@prisma/engines'
+  - '@scarf/scarf'
+  - argon2
+  - core-js
   - prisma
+  - protobufjs

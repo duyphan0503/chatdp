@@ -52,7 +52,6 @@ describe('RealtimeGateway (e2e)', () => {
 
     const aliceToken = alice.body.accessToken as string;
     const bobToken = bob.body.accessToken as string;
-    const aliceId = alice.body.user.id as string;
     const bobId = bob.body.user.id as string;
 
     // 2) Create conversation and add both as participants via HTTP

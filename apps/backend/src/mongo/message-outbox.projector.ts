@@ -1,9 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import {
-  messageOutboxItemsProcessedTotal,
-  messageOutboxPending,
-} from '../metrics/metrics.service.js';
+import { messageOutboxItemsProcessedTotal, messageOutboxPending } from '../metrics/index.js';
 import {
   type MessageOutboxEventType,
   type MessageOutboxPayload,
@@ -116,11 +113,16 @@ export class MessageOutboxProjector {
     const eventType = row.eventType as MessageOutboxEventType;
     const payload = row.payload as MessageOutboxPayload | null;
 
-    try {
-      if (!payload || typeof payload !== 'object') {
-        throw new Error('Invalid outbox payload');
-      }
+    if (!payload || typeof payload !== 'object') {
+      const err = new Error('Invalid outbox payload');
+      this.logger.error(
+        `Failed to project outbox id=${row.id} type=${String(eventType)}: ${String(err)}`,
+      );
+      await this.markFailed(row.id, err);
+      return false;
+    }
 
+    try {
       switch (eventType) {
         case 'message_created': {
           const doc = this.mapPayloadToDocument(payload);
