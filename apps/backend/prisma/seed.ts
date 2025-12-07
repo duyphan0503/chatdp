@@ -13,7 +13,6 @@ if (!connectionString) {
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-
 async function main() {
   // Minimal dev seed: 2 users, 1 private conversation, participants, and 2 messages
   const alice = await prisma.user.upsert({

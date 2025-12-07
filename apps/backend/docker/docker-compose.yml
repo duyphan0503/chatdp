@@ -31,7 +31,7 @@ services:
   redis:
     image: redis:8.4
     container_name: chatdp-redis
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
     ports:
       - '6379:6379'
     volumes:
@@ -55,7 +55,7 @@ services:
       TUNNEL_SERVICE_MONGODB: mongodb:27017
       TUNNEL_SERVICE_REDIS: redis:6379
       CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
-    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    command: ['tunnel', '--no-autoupdate', 'run', '--token', '${CLOUDFLARE_TUNNEL_TOKEN}']
     depends_on:
       - postgres
       - mongodb
@@ -69,21 +69,20 @@ services:
     working_dir: /app
     command: sh -c "npm install -g npm@11.6.4 && npm i -g pnpm@10.20.0 && pnpm install --no-frozen-lockfile && pnpm --filter @chatdp/backend prisma:migrate:deploy && pnpm --filter @chatdp/backend prisma:generate && pnpm --filter @chatdp/backend prisma:seed && pnpm dev:backend"
     environment:
-     CI: "true"
+      CI: 'true'
     ports:
-     - "3000:3000"
+      - '3000:3000'
     env_file:
-     - ../.env
+      - ../.env
     volumes:
-     # Mount monorepo root into /app so package.json is available for pnpm
-     - ../../..:/app
+      # Mount monorepo root into /app so package.json is available for pnpm
+      - ../../..:/app
     depends_on:
-     - postgres
-     - mongodb
-     - redis
+      - postgres
+      - mongodb
+      - redis
     networks:
-     - chatdp-infra
-
+      - chatdp-infra
 
 volumes:
   postgres_data:
