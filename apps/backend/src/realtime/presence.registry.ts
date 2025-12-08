@@ -30,10 +30,6 @@ export class PresenceRegistry {
     return (this.userSockets.get(userId)?.size ?? 0) > 0;
   }
 
-  onlineUserIds(): string[] {
-    return Array.from(this.userSockets.keys());
-  }
-
   joinConversation(userId: string, conversationId: string): number {
     const set = this.joinedConversations.get(userId) ?? new Set<string>();
     set.add(conversationId);

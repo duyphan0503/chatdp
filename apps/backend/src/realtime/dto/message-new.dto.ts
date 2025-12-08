@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsUUID } from 'class-validator';
 
 const CONTENT_TYPES = ['text', 'image', 'video', 'file', 'voice'] as const;
 export type ContentTypeDto = (typeof CONTENT_TYPES)[number];
@@ -18,4 +18,8 @@ export class MessageNewDto {
   @IsOptional()
   @IsString()
   mediaUrl?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  replyToMessageId?: string;
 }

@@ -12,11 +12,11 @@
     "outDir": "dist",
     "baseUrl": "./",
     "incremental": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "strict": true,
     "skipLibCheck": true,
     "types": ["node", "jest"]
   },
   "include": ["src/**/*", "test/**/*", "e2e/**/*"],
-  "exclude": ["node_modules", "dist", "src/media/**/*"]
+  "exclude": ["node_modules", "dist"]
 }

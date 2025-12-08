@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import type { Env } from './config/env.schema.js';
+import { json, urlencoded } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware.js';
 import { HttpMetricsMiddleware } from './metrics/index.js';
@@ -34,6 +35,17 @@ export function configureApp(app: INestApplication): void {
 
   // Security headers
   app.use(helmet());
+
+  // Request body size limits (basic hardening)
+  const jsonLimit = '100kb';
+  const urlEncodedLimit = '100kb';
+  app.use(json({ limit: jsonLimit }));
+  app.use(
+    urlencoded({
+      extended: true,
+      limit: urlEncodedLimit,
+    }),
+  );
 
   // Configure log levels from env LOG_LEVEL
   const level = config.get('LOG_LEVEL', { infer: true });

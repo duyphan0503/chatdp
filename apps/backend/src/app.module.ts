@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
+import { Redis } from 'ioredis';
+import { RedisThrottlerStorage } from './throttler/redis-throttler.storage.js';
 import { HealthController } from './health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -14,11 +16,15 @@ import type { Env } from './config/env.schema.js';
 import { MetricsModule } from './metrics/index.js';
 import { MetricsController } from './metrics/index.js';
 import { LoggerModule } from './logging/logger.module.js';
+import { CacheConfigModule } from './cache/cache.module.js';
+import { MediaModule } from './media/media.module.js';
+import { MongoReadModelModule } from './mongo/mongo-read-model.module.js';
 
 @Module({
   imports: [
     // Load environment variables and make ConfigService globally available
     EnvConfigModule,
+    CacheConfigModule,
     LoggerModule,
     MetricsModule,
     // Basic rate limiting; configurable via env
@@ -29,22 +35,56 @@ import { LoggerModule } from './logging/logger.module.js';
         const limit = config.get('RATE_LIMIT_LIMIT', { infer: true });
         const authTtl = config.get('RATE_LIMIT_AUTH_TTL', { infer: true });
         const authLimit = config.get('RATE_LIMIT_AUTH_LIMIT', { infer: true });
-        return [
-          { ttl, limit },
-          { name: 'auth', ttl: authTtl, limit: authLimit },
+        const redisUrl = config.get('REDIS_URL', { infer: true });
+
+        const throttlers = [
+          {
+            ttl,
+            limit,
+          },
+          {
+            name: 'auth',
+            ttl: authTtl,
+            limit: authLimit,
+          },
         ];
+
+        if (!redisUrl) {
+          // Default in-memory throttling when Redis is not configured.
+          return throttlers;
+        }
+
+        // In test environments we prefer in-memory throttling even when
+        // REDIS_URL is configured, to avoid coupling E2E tests to an
+        // external Redis instance that may not be reachable.
+        if (process.env.NODE_ENV === 'test') {
+          return throttlers;
+        }
+
+        // When REDIS_URL is set, use shared Redis-backed storage.
+        const client = new Redis(redisUrl);
+        const storage = new RedisThrottlerStorage(client, { prefix: 'throttle' });
+
+        return {
+          storage,
+          throttlers,
+        };
       },
     }),
-    // Phase 2: Prisma module (global)
+    // Persistence and core services
     PrismaModule,
-    // Phase 3: Auth & Users modules
+    // Authentication and user management
     AuthModule,
     UsersModule,
-    // Phase 4: Conversations & Messages modules
+    // Conversations and messaging API
     ConversationsModule,
     MessagesModule,
-    // Phase 5: Realtime/WebSocket module
+    // Realtime/WebSocket signalling and subscriptions
     RealtimeModule,
+    // Media upload and retrieval
+    MediaModule,
+    // Optional MongoDB read model for fast timelines
+    MongoReadModelModule,
   ],
   controllers: [HealthController, MetricsController],
   providers: [

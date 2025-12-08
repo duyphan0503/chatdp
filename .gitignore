@@ -8,6 +8,11 @@ coverage/
 .prisma/
 .idea/
 AGENTS.md
+*.postman_environment.json
+
+# Turborepo cache
+.turbo/
+apps/backend/.turbo/
 
 # Flutter
 **/build/

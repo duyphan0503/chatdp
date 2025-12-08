@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev:backend": "pnpm --filter @chatdp/backend dev",
+    "dev:backend:docker": "docker compose -f apps/backend/docker/docker-compose.yml up chatdp-backend",
     "build:backend": "pnpm --filter @chatdp/backend build",
     "lint:backend": "pnpm --filter @chatdp/backend lint",
     "test:backend": "pnpm --filter @chatdp/backend test",
@@ -15,7 +16,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "ci": "echo Run CI locally via turbo or gh",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@redocly/cli": "^2.11.0",
@@ -23,12 +24,16 @@
     "date-fns": "^4.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "prisma": "^7.1.0",
     "turbo": "^2.6.0"
   },
   "lint-staged": {
     "apps/backend/src/**/*.ts": [
-      "pnpm --filter @chatdp/backend lint -- --fix",
+      "pnpm --filter @chatdp/backend lint --fix",
       "pnpm --filter @chatdp/backend format"
     ]
+  },
+  "dependencies": {
+    "@prisma/client": "^7.1.0"
   }
 }

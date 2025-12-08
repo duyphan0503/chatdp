@@ -23,6 +23,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         return s;
       })(),
     });
+
+    // Touch validate so static analyzers see it as used.
+    // At runtime, Passport/NestJS call this method via AuthGuard('jwt').
+    void this.validate;
   }
 
   validate(payload: JwtPayload): { userId: string; email?: string } {

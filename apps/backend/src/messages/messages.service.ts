@@ -3,20 +3,35 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DeliveryStatus, ContentType, Prisma, Message, MessageStatus } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { MessageOutboxRepository } from '../repositories/message-outbox.repository.js';
+import { DeliveryStatus, ContentType, Message, MessageStatus, Reaction } from '@prisma/client';
+import {
+  type MessagesTimelineReadRepository,
+  MESSAGES_TIMELINE_READ_REPOSITORY,
+} from '../repositories/messages-timeline-read.repository.js';
+import type { Env } from '../config/env.schema.js';
 import { MessageCreateDto } from './dto/message-create.dto.js';
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService<Env, true>,
+    private readonly messageOutbox: MessageOutboxRepository,
+    @Inject(MESSAGES_TIMELINE_READ_REPOSITORY)
+    private readonly timelineReadRepo: MessagesTimelineReadRepository,
+  ) {}
 
   async create(conversationId: string, senderId: string, dto: MessageCreateDto): Promise<Message> {
     // Ensure conversation exists and load participants to compute statuses inside a transaction
     return this.prisma.$transaction(async (tx) => {
       const conv = await tx.conversation.findUnique({
         where: { id: conversationId },
+
         include: { participants: { select: { userId: true } } },
       });
       if (!conv) throw new NotFoundException('conversation not found');
@@ -27,6 +42,18 @@ export class MessagesService {
         if (!dto.content) throw new BadRequestException('text message requires content');
       }
 
+      if (dto.replyToMessageId) {
+        const parent = await tx.message.findUnique({
+          where: { id: dto.replyToMessageId },
+          select: { conversationId: true },
+        });
+        if (!parent || parent.conversationId !== conversationId) {
+          throw new BadRequestException(
+            'replyToMessageId must refer to a message in this conversation',
+          );
+        }
+      }
+
       const message = await tx.message.create({
         data: {
           conversationId,
@@ -34,8 +61,32 @@ export class MessagesService {
           contentType: dto.contentType as ContentType, // enum narrowed by DTO union
           content: dto.content ?? null,
           mediaUrl: dto.mediaUrl ?? null,
+          replyToMessageId: dto.replyToMessageId ?? null,
         },
       });
+
+      // When a mediaUrl is provided (non-text message), persist a Media row linked to this message
+      if (dto.contentType !== 'text' && dto.mediaUrl) {
+        const ttlSeconds = this.config.get('MEDIA_TTL_SECONDS', { infer: true });
+        const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+
+        await tx.media.create({
+          data: {
+            uploaderId: senderId,
+            conversationId,
+            messageId: message.id,
+            url: dto.mediaUrl,
+            mimeType: dto.mediaMimeType ?? null,
+            size: dto.mediaSize ?? null,
+            contentId: dto.contentId ?? null,
+            storageProvider: 'r2',
+            status: 'cloud_stored',
+            expiresAt,
+            lastAccessAt: null,
+            objectKey: null,
+          },
+        });
+      }
 
       const statuses = conv.participants.map((p) => ({
         messageId: message.id,
@@ -44,6 +95,8 @@ export class MessagesService {
         readAt: p.userId === senderId ? new Date() : null,
       }));
       await tx.messageStatus.createMany({ data: statuses, skipDuplicates: true });
+
+      await this.messageOutbox.enqueueMessageCreated(message, tx);
 
       return message;
     });
@@ -62,22 +115,18 @@ export class MessagesService {
     });
     if (!participant) throw new ForbiddenException('not a participant');
 
-    const take = Math.min(Math.max(limit ?? 20, 1), 100);
-    const baseQuery: Prisma.MessageFindManyArgs = {
-      where: { conversationId },
-      orderBy: { createdAt: 'desc' },
-      take: take + 1,
-    };
-    const rows = await this.prisma.message.findMany(
-      cursor ? { ...baseQuery, cursor: { id: cursor }, skip: 1 } : baseQuery,
+    const { items, nextCursor } = await this.timelineReadRepo.listConversationMessages(
+      conversationId,
+      limit,
+      cursor,
     );
-    const items = rows.slice(0, take);
-    const nextCursor = rows.length > take ? (items[items.length - 1]?.id ?? null) : null;
-    return { items, nextCursor };
+
+    return { items: items as unknown as Message[], nextCursor };
   }
 
   async markRead(
     messageId: string,
+
     userId: string,
   ): Promise<{ message: Message; status: MessageStatus }> {
     const msg = await this.prisma.message.findUnique({
@@ -122,5 +171,67 @@ export class MessagesService {
     if (!isParticipant) throw new ForbiddenException('not a participant');
 
     return this.prisma.messageStatus.findMany({ where: { messageId } });
+  }
+
+  async addReaction(messageId: string, userId: string, emoji: string): Promise<Reaction> {
+    const msg = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: { conversation: { include: { participants: true } } },
+    });
+    if (!msg) throw new NotFoundException('message not found');
+    const isParticipant = msg.conversation.participants.some((p) => p.userId === userId);
+    if (!isParticipant) throw new ForbiddenException('not a participant');
+
+    if (!emoji || emoji.length > 64) {
+      throw new BadRequestException('invalid emoji');
+    }
+
+    return this.prisma.reaction.upsert({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+      update: {},
+      create: { messageId, userId, emoji },
+    });
+  }
+
+  async removeReaction(messageId: string, userId: string, emoji: string): Promise<void> {
+    const msg = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: { conversation: { include: { participants: true } } },
+    });
+    if (!msg) throw new NotFoundException('message not found');
+    const isParticipant = msg.conversation.participants.some((p) => p.userId === userId);
+    if (!isParticipant) throw new ForbiddenException('not a participant');
+
+    await this.prisma.reaction.delete({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+    });
+  }
+
+  async softDelete(messageId: string, userId: string): Promise<Message> {
+    const msg = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: { conversation: { include: { participants: true } } },
+    });
+    if (!msg) throw new NotFoundException('message not found');
+
+    const isParticipant = msg.conversation.participants.some((p) => p.userId === userId);
+    if (!isParticipant) throw new ForbiddenException('not a participant');
+
+    if (msg.senderId !== userId) {
+      throw new ForbiddenException('only sender can delete message');
+    }
+
+    if (msg.deletedAt) {
+      return msg;
+    }
+
+    const updated = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { deletedAt: new Date(), content: null },
+    });
+
+    await this.messageOutbox.enqueueMessageDeleted(updated);
+
+    return updated;
   }
 }
