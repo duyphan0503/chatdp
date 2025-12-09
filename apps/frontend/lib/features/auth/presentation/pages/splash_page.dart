@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/gen/assets.gen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../widgets/bubble_background.dart';
 import '../widgets/animated_title.dart';
 
@@ -19,7 +22,7 @@ class _SplashPageState extends State<SplashPage> {
     // Simple timed navigation placeholder until auth flow is ready.
     Future<void>.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      context.go('/login');
+      context.go(AppRoutes.login);
     });
   }
 
@@ -36,10 +39,7 @@ class _SplashPageState extends State<SplashPage> {
               gradient: RadialGradient(
                 center: Alignment.center,
                 radius: 1.5,
-                colors: [
-                  Color(0xFF202B48), // Deep Navy Center
-                  Color(0xFF000000), // Pure Black Edges
-                ],
+                colors: [AppColors.splashInner, AppColors.splashOuter],
                 stops: [0.0, 1.0],
               ),
             ),
@@ -63,22 +63,20 @@ class _SplashPageState extends State<SplashPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
+                        color: AppColors.splashNeonCyan.withValues(alpha: 0.3),
                         blurRadius: 60,
                         spreadRadius: 10,
                       ),
                       BoxShadow(
-                        color: const Color(0xFFAA00FF).withValues(alpha: 0.2),
+                        color: AppColors.splashNeonPurple.withValues(
+                          alpha: 0.2,
+                        ),
                         blurRadius: 40,
                         spreadRadius: 5,
                       ),
                     ],
                   ),
-                  child: Image.asset(
-                    'assets/logo_transparent.png',
-                    width: 220,
-                    height: 220,
-                  ),
+                  child: Assets.logoTransparent.image(width: 220, height: 220),
                 ),
                 const SizedBox(height: 24),
                 // App name with neon border effect

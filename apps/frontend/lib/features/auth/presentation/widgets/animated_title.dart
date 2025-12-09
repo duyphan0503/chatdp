@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 /// Animated text with a "neon snake" highlight running along the border.
+
 /// A bright neon segment travels around the outline over time while
 /// the base fill and base stroke remain visible and readable.
 class AnimatedGradientText extends StatefulWidget {
@@ -46,7 +49,7 @@ class _AnimatedGradientTextState extends State<AnimatedGradientText>
       animation: _controller,
       builder: (context, child) {
         // Compute base neon stroke color (always visible border).
-        const baseNeonColor = Color(0xFF00E5FF); // neon cyan
+        const baseNeonColor = AppColors.splashNeonCyan;
 
         return Stack(
           children: [
@@ -75,9 +78,9 @@ class _AnimatedGradientTextState extends State<AnimatedGradientText>
                 return LinearGradient(
                   colors: const [
                     Colors.transparent,
-                    Color(0xFF00E5FF), // Head (Cyan)
-                    Color(0xFFAA00FF), // Body (Purple)
-                    Color(0xFF00E5FF), // Tail (Cyan)
+                    AppColors.splashNeonCyan, // Head (Cyan)
+                    AppColors.splashNeonPurple, // Body (Purple)
+                    AppColors.splashNeonCyan, // Tail (Cyan)
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
