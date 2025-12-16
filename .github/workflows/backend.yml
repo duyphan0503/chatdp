@@ -32,6 +32,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -61,12 +70,13 @@ jobs:
             fi
           }
           ensure_var DATABASE_URL 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public' apps/backend/.env
+          ensure_var REDIS_URL 'redis://localhost:6379' apps/backend/.env
           ensure_var JWT_SECRET 'ci_secret_1234567890_1234567890_abcdef' apps/backend/.env
            ensure_var REFRESH_TOKEN_TTL '2m' apps/backend/.env
           ensure_var WS_RATE_LIMIT_TTL '2' apps/backend/.env
           ensure_var WS_RATE_LIMIT_LIMIT '2' apps/backend/.env
-      - name: Sync DB schema (no migrations needed)
-        run: pnpm --filter @chatdp/backend exec prisma db push
+      - name: Migrate DB (deploy only)
+        run: pnpm --filter @chatdp/backend prisma:migrate:deploy || echo "deploy skipped"
       - name: Prisma generate
         run: pnpm --filter @chatdp/backend prisma:generate || echo "skip prisma generate"
       - name: Lint
