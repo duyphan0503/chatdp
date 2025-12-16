@@ -59,9 +59,9 @@ describe('Auth Verification (e2e)', () => {
     await app.close();
   });
 
-  it('POST /auth/send-verification-email', async () => {
+  it('POST /auth/send-verification', async () => {
     await request(app.getHttpServer())
-      .post('/api/auth/send-verification-email')
+      .post('/api/auth/send-verification')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
