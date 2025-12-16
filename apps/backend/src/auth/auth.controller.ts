@@ -143,7 +143,7 @@ export class AuthController {
   @Post('send-verification-email')
   async sendVerificationEmail(@Body() body: ForgotPasswordDto): Promise<void> {
     // Reusing ForgotPasswordDto which just has 'email'
-    const user = await this.auth['users'].findByEmail(body.email);
+    const user = await this.auth.findUserByEmail(body.email);
     if (user) {
       await this.auth.sendVerificationEmail(user.id);
     }
