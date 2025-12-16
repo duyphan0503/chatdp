@@ -65,8 +65,8 @@ jobs:
            ensure_var REFRESH_TOKEN_TTL '2m' apps/backend/.env
           ensure_var WS_RATE_LIMIT_TTL '2' apps/backend/.env
           ensure_var WS_RATE_LIMIT_LIMIT '2' apps/backend/.env
-      - name: Migrate DB (deploy only)
-        run: pnpm --filter @chatdp/backend prisma:migrate:deploy || echo "deploy skipped"
+      - name: Sync DB schema (no migrations needed)
+        run: pnpm --filter @chatdp/backend exec prisma db push
       - name: Prisma generate
         run: pnpm --filter @chatdp/backend prisma:generate || echo "skip prisma generate"
       - name: Lint
