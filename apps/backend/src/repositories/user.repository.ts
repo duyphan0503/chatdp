@@ -8,6 +8,7 @@ export interface CreateUserInput {
   displayName: string;
   avatarUrl?: string | null;
   bio?: string | null;
+  emailVerified?: Date | null;
 }
 
 // Repository-level representation of a user (decoupled from Prisma types)
@@ -21,6 +22,7 @@ export interface UserRecord {
   bio: string | null;
   createdAt: Date;
   updatedAt: Date;
+  emailVerified: Date | null;
 }
 
 @Injectable()
@@ -28,11 +30,11 @@ export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findById(id: string): Promise<UserRecord | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({ where: { id } }) as Promise<UserRecord | null>;
   }
 
   findByEmail(email: string): Promise<UserRecord | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({ where: { email } }) as Promise<UserRecord | null>;
   }
 
   async create(data: CreateUserInput): Promise<UserRecord> {
@@ -44,11 +46,26 @@ export class UserRepository {
         displayName: data.displayName,
         avatarUrl: data.avatarUrl ?? undefined,
         bio: data.bio ?? undefined,
+        emailVerified: data.emailVerified ?? undefined,
       },
-    });
+    }) as Promise<UserRecord>;
   }
 
   async updateDisplayName(id: string, displayName: string): Promise<UserRecord> {
-    return this.prisma.user.update({ where: { id }, data: { displayName } });
+    return this.prisma.user.update({ where: { id }, data: { displayName } }) as Promise<UserRecord>;
+  }
+
+  async verifyEmail(email: string): Promise<UserRecord> {
+    return this.prisma.user.update({
+      where: { email },
+      data: { emailVerified: new Date() },
+    }) as Promise<UserRecord>;
+  }
+
+  async updatePassword(email: string, passwordHash: string): Promise<UserRecord> {
+    return this.prisma.user.update({
+      where: { email },
+      data: { passwordHash },
+    }) as Promise<UserRecord>;
   }
 }
