@@ -117,6 +117,10 @@ export class AuthService {
     await this.mailService.sendOtp(user.email, otp, 'Verify your email');
   }
 
+  async findUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.users.findByEmail(email);
+  }
+
   async verifyEmail(dto: VerifyEmailDto): Promise<{ success: boolean }> {
     const valid = await this.otpService.verifyOtp(dto.email, dto.otp, 'verify');
     if (!valid) throw new UnauthorizedException('Invalid OTP');
