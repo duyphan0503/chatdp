@@ -29,7 +29,7 @@ export class MailService {
     if (!to) return;
     try {
       await this.transporter.sendMail({
-        from: this.config.get<string>('SMTP_FROM', '"ChatDP" <no-reply@@example.com>'),
+        from: this.config.get<string>('SMTP_FROM', '"ChatDP" <no-reply@example.com>'),
         to,
         subject,
         text: `Your OTP is: ${otp}. It expires in 5 minutes.`,
