@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { AuthService, AuthTokens } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { SignupDto } from './dto/signup.dto.js';
@@ -128,6 +129,7 @@ export class AuthController {
     return { success: true } as const;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 3, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('send-verification')
