@@ -1,14 +1,24 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
 import { add } from 'date-fns';
 import { UserRepository, UserRecord } from '../repositories/user.repository.js';
+import { OAuth2Client } from 'google-auth-library';
+import { MailService } from '../common/mail/mail.service.js';
+import { OtpService } from './otp.service.js';
 import {
   RefreshTokenRepository,
   RefreshTokenRecord,
 } from '../repositories/refresh-token.repository.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 export interface AuthTokens {
   accessToken: string;
@@ -32,15 +42,24 @@ type RefreshContext = { userAgent?: string | null; ip?: string | null };
  * - Authenticate credentials and issue JWT access/refresh tokens.
  * - Persist and rotate refresh tokens with DB-backed revocation.
  * - Enforce optional binding of refresh tokens to user agent and IP.
+ * - Handle Email Verification and Password Reset via OTP.
  */
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     private readonly users: UserRepository,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly refreshTokens: RefreshTokenRepository,
-  ) {}
+    private readonly otpService: OtpService,
+    private readonly mailService: MailService,
+  ) {
+    this.googleClient = new OAuth2Client({
+      clientId: this.config.get<string>('GOOGLE_CLIENT_ID'),
+    });
+  }
 
   /**
    * Registers a new user and returns initial access/refresh tokens.
@@ -85,6 +104,85 @@ export class AuthService {
 
     const valid = await argon2.verify(user.passwordHash, params.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    return this.issueTokens(user, ctx);
+  }
+
+  async sendVerificationEmail(userId: string): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (!user || user.emailVerified) return;
+    if (!user.email) throw new BadRequestException('User needs an email to verify');
+
+    const otp = await this.otpService.generateOtp(user.email, 'verify');
+    await this.mailService.sendOtp(user.email, otp, 'Verify your email');
+  }
+
+  async findUserByEmail(email: string): Promise<UserRecord | null> {
+    return this.users.findByEmail(email);
+  }
+
+  async verifyEmail(dto: VerifyEmailDto): Promise<{ success: boolean }> {
+    const valid = await this.otpService.verifyOtp(dto.email, dto.otp, 'verify');
+    if (!valid) throw new UnauthorizedException('Invalid OTP');
+
+    await this.users.verifyEmail(dto.email);
+    return { success: true };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.users.findByEmail(email);
+    if (!user) return; // Silent return for security
+
+    const otp = await this.otpService.generateOtp(email, 'forgot');
+    await this.mailService.sendOtp(email, otp, 'Reset your password');
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ success: boolean }> {
+    const valid = await this.otpService.verifyOtp(dto.email, dto.otp, 'forgot');
+    if (!valid) throw new UnauthorizedException('Invalid OTP');
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    await this.users.updatePassword(dto.email, passwordHash);
+
+    return { success: true };
+  }
+
+  /**
+   * Authenticates a user using Google ID Token.
+   *
+   * @param token Google ID Token.
+   * @param ctx Optional context for binding the refresh token (UA/IP).
+   */
+  async googleLogin(token: string, ctx?: RefreshContext): Promise<AuthTokens> {
+    let payload;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: token,
+        audience: this.config.get<string>('GOOGLE_CLIENT_ID'),
+      });
+      payload = ticket.getPayload();
+    } catch {
+      // Token verification failed
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    if (!payload || !payload.email) {
+      throw new UnauthorizedException('Invalid Google Token payload');
+    }
+
+    const { email, name, picture } = payload;
+    let user = await this.users.findByEmail(email);
+
+    if (!user) {
+      const passwordHash = await argon2.hash(randomUUID());
+      user = await this.users.create({
+        email,
+        displayName: name || email.substring(0, email.indexOf('@')),
+        avatarUrl: picture,
+        passwordHash,
+        emailVerified: new Date(),
+      });
+    }
 
     return this.issueTokens(user, ctx);
   }

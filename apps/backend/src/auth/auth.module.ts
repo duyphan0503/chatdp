@@ -8,11 +8,14 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository.js';
+import { OtpService } from './otp.service.js';
+import { MailModule } from '../common/mail/mail.module.js';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -33,7 +36,7 @@ import { RefreshTokenRepository } from '../repositories/refresh-token.repository
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, UserRepository, RefreshTokenRepository],
+  providers: [AuthService, JwtStrategy, UserRepository, RefreshTokenRepository, OtpService],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

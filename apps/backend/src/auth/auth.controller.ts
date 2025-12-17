@@ -1,8 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { AuthService, AuthTokens } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { SignupDto } from './dto/signup.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
+import { GoogleLoginDto } from './dto/google-login.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
@@ -77,6 +82,23 @@ export class AuthController {
   }
 
   /**
+   * Authenticates a user via Google ID Token.
+   *
+   * @param body Google Login DTO containing the ID Token.
+   * @param req HTTP request used to extract user agent and client IP.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('google')
+  async googleLogin(@Body() body: GoogleLoginDto, @Req() req: Request): Promise<AuthTokens> {
+    const ua = headerValue(req.headers['user-agent']);
+    return this.auth.googleLogin(body.token, {
+      userAgent: ua,
+      ip: extractClientIp(req),
+    });
+  }
+
+  /**
    * Rotates a valid refresh token and returns a fresh access/refresh pair.
    *
    * Binding checks (user agent, IP) are delegated to AuthService based on
@@ -105,5 +127,48 @@ export class AuthController {
   async logout(@Body() body: RefreshDto): Promise<{ success: true }> {
     await this.auth.logout(body.refreshToken);
     return { success: true } as const;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('send-verification')
+  async sendVerification(@Req() req: Request & { user?: { userId: string } }): Promise<void> {
+    // Requires AuthGuard to populate valid user
+    if (req.user?.userId) {
+      await this.auth.sendVerificationEmail(req.user.userId);
+    }
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('send-verification-email')
+  async sendVerificationEmail(@Body() body: ForgotPasswordDto): Promise<void> {
+    // Reusing ForgotPasswordDto which just has 'email'
+    const user = await this.auth.findUserByEmail(body.email);
+    if (user) {
+      await this.auth.sendVerificationEmail(user.id);
+    }
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-email')
+  async verifyEmail(@Body() body: VerifyEmailDto): Promise<{ success: boolean }> {
+    return this.auth.verifyEmail(body);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto): Promise<void> {
+    return this.auth.forgotPassword(body.email);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto): Promise<{ success: boolean }> {
+    return this.auth.resetPassword(body);
   }
 }
