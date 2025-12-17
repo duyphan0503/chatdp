@@ -133,10 +133,10 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   @Post('send-verification')
-  async sendVerification(@Req() req: Request & { user?: { id: string } }): Promise<void> {
+  async sendVerification(@Req() req: Request & { user?: { userId: string } }): Promise<void> {
     // Requires AuthGuard to populate valid user
-    if (req.user?.id) {
-      await this.auth.sendVerificationEmail(req.user.id);
+    if (req.user?.userId) {
+      await this.auth.sendVerificationEmail(req.user.userId);
     }
   }
 
