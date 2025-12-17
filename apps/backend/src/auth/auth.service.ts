@@ -29,6 +29,7 @@ export interface AuthTokens {
     email: string | null;
     displayName: string;
     avatarUrl: string | null;
+    isEmailVerified: boolean;
   };
 }
 
@@ -133,6 +134,15 @@ export class AuthService {
 
     const valid = await argon2.verify(user.passwordHash, params.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    if (!user.emailVerified) {
+      try {
+        await this.sendVerificationEmail(user.id);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`Failed to resend verification email during login: ${msg}`);
+      }
+    }
 
     return this.issueTokens(user, ctx);
   }
@@ -353,6 +363,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl ?? null,
+        isEmailVerified: !!user.emailVerified,
       },
     };
   }
