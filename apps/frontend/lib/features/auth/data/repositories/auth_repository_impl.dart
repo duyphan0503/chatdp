@@ -32,4 +32,20 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     await _storage.deleteAll();
   }
+
+  @override
+  Future<UserEntity> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final userModel = await _dataSource.register(name, email, password);
+    return userModel.toEntity();
+  }
+
+  @override
+  Future<UserEntity> verifyEmail(String email, String otp) async {
+    final userModel = await _dataSource.verifyEmail(email, otp);
+    return userModel.toEntity();
+  }
 }
