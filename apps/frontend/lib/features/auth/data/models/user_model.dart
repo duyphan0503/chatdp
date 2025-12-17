@@ -11,6 +11,7 @@ abstract class UserModel with _$UserModel {
     required String email,
     required String displayName,
     String? avatarUrl,
+    @Default(false) bool isEmailVerified,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -23,5 +24,6 @@ extension UserModelX on UserModel {
     email: email,
     displayName: displayName,
     avatarUrl: avatarUrl,
+    isEmailVerified: isEmailVerified,
   );
 }

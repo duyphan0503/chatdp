@@ -11,6 +11,7 @@ _UserModel _$UserModelFromJson(Map<String, dynamic> json) => _UserModel(
   email: json['email'] as String,
   displayName: json['displayName'] as String,
   avatarUrl: json['avatarUrl'] as String?,
+  isEmailVerified: json['isEmailVerified'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>
@@ -19,4 +20,5 @@ Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>
       'email': instance.email,
       'displayName': instance.displayName,
       'avatarUrl': instance.avatarUrl,
+      'isEmailVerified': instance.isEmailVerified,
     };

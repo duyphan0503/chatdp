@@ -60,16 +60,29 @@ class _LoginPageState extends State<LoginPage> {
             BlocConsumer<AuthBloc, AuthState>(
               listener: (context, state) {
                 if (state is Authenticated) {
-                  // Show Success Message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Login Successful! Welcome back.'),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  // Navigate to Home/Chat
-                  context.go(AppRoutes.chat);
+                  // Check verification status
+                  if (state.user.isEmailVerified) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Login Successful! Welcome back.'),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    context.go(AppRoutes.chat);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please verify your email to continue.'),
+                        backgroundColor: Colors.orangeAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    context.push(
+                      AppRoutes.otpVerification,
+                      extra: {'email': state.user.email},
+                    );
+                  }
                 } else if (state is AuthError) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
