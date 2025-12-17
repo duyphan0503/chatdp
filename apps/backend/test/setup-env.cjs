@@ -23,8 +23,15 @@ try {
   if (!process.env.WS_RATE_LIMIT_LIMIT) process.env.WS_RATE_LIMIT_LIMIT = '2';
 
   // Ensure DATABASE_URL present (may still require a running DB when tests use it)
+  // Use 127.0.0.1 and correct password 'chatdp000000' for local tests
   if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public';
+    process.env.DATABASE_URL =
+      'postgresql://chatdp:chatdp000000@127.0.0.1:5432/chatdp?schema=public';
+  }
+
+  // Ensure REDIS_URL is present for local tests
+  if (!process.env.REDIS_URL) {
+    process.env.REDIS_URL = 'redis://:chatdp000000@127.0.0.1:6379';
   }
 
   // Relax HTTP rate limiting for E2E runs to avoid flakiness
