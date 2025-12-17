@@ -14,6 +14,22 @@ try {
     fs.copyFileSync(envExample, envPath);
   }
 
+  // Load .env.test.local if it exists (for local overrides)
+  const localEnvPath = path.join(rootDir, '.env.test.local');
+  if (fs.existsSync(localEnvPath)) {
+    const content = fs.readFileSync(localEnvPath, 'utf8');
+    content.split('\n').forEach((line) => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim().replace(/^['"]|['"]$/g, '');
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    });
+  }
+
   // Ensure robust defaults via process.env (do not overwrite if already set)
   if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 32) {
     process.env.JWT_SECRET = 'local_e2e_secret_abcdefghijklmnopqrstuvwxyz_123456';
