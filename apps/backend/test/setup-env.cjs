@@ -24,13 +24,7 @@ try {
 
   // Ensure DATABASE_URL present (may still require a running DB when tests use it)
   if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL =
-      'postgresql://chatdp:chatdp000000@127.0.0.1:5432/chatdp?schema=public';
-  }
-
-  // Ensure REDIS_URL present for Throttler/Cache
-  if (!process.env.REDIS_URL) {
-    process.env.REDIS_URL = 'redis://:chatdp000000@127.0.0.1:6379';
+    process.env.DATABASE_URL = 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public';
   }
 
   // Relax HTTP rate limiting for E2E runs to avoid flakiness

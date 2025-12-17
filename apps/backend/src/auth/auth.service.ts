@@ -3,7 +3,6 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -29,7 +28,6 @@ export interface AuthTokens {
     email: string | null;
     displayName: string;
     avatarUrl: string | null;
-    isEmailVerified: boolean;
   };
 }
 
@@ -48,7 +46,6 @@ type RefreshContext = { userAgent?: string | null; ip?: string | null };
  */
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
   private googleClient: OAuth2Client;
 
   constructor(
@@ -80,25 +77,7 @@ export class AuthService {
     ctx?: RefreshContext,
   ): Promise<AuthTokens> {
     const existing = params.email ? await this.users.findByEmail(params.email) : null;
-    if (existing) {
-      if (existing.emailVerified) {
-        throw new ConflictException('Email already registered');
-      }
-
-      // Handle unverified user: Update credentials and resend verification
-      const passwordHash = await argon2.hash(params.password);
-      await this.users.updatePassword(existing.email!, passwordHash);
-      const updatedUser = await this.users.updateDisplayName(existing.id, params.displayName);
-
-      try {
-        await this.sendVerificationEmail(updatedUser.id);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`Failed to resend verification email during signup: ${msg}`);
-      }
-
-      return this.issueTokens(updatedUser, ctx);
-    }
+    if (existing) throw new ConflictException('Email already registered');
 
     const passwordHash = await argon2.hash(params.password);
     const user = await this.users.create({
@@ -106,15 +85,6 @@ export class AuthService {
       passwordHash,
       displayName: params.displayName,
     });
-
-    // Automatically send verification email
-    try {
-      await this.sendVerificationEmail(user.id);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Failed to send verification email during signup: ${msg}`);
-    }
-
     return this.issueTokens(user, ctx);
   }
 
@@ -134,15 +104,6 @@ export class AuthService {
 
     const valid = await argon2.verify(user.passwordHash, params.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
-
-    if (!user.emailVerified) {
-      try {
-        await this.sendVerificationEmail(user.id);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`Failed to resend verification email during login: ${msg}`);
-      }
-    }
 
     return this.issueTokens(user, ctx);
   }
@@ -363,7 +324,6 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl ?? null,
-        isEmailVerified: !!user.emailVerified,
       },
     };
   }
