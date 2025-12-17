@@ -140,6 +140,19 @@ export const envSchema = z.object({
     .int()
     .positive()
     .default(10 * 1024 * 1024 * 1024),
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
+  // SMTP / Email Configuration
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  SMTP_SECURE: z.coerce.boolean().default(false),
+
+  // Redis Password (if needed)
+  REDIS_PASSWORD: z.string().optional(),
 });
 
 // TypeScript type automatically inferred from the schema (single source of truth)
