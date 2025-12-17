@@ -20,3 +20,4 @@ apps/backend/.turbo/
 .packages
 .pub-cache/
 .melos_tool/
+.env.test.local
