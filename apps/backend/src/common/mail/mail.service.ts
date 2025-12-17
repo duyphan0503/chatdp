@@ -8,15 +8,21 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   constructor(private readonly config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('SMTP_HOST'),
-      port: this.config.get<number>('SMTP_PORT'),
-      secure: this.config.get<boolean>('SMTP_SECURE', false),
-      auth: {
-        user: this.config.get<string>('SMTP_USER'),
-        pass: this.config.get<string>('SMTP_PASS'),
-      },
-    });
+    if (process.env.NODE_ENV === 'test') {
+      this.transporter = nodemailer.createTransport({
+        jsonTransport: true,
+      });
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: this.config.get<string>('SMTP_HOST'),
+        port: this.config.get<number>('SMTP_PORT'),
+        secure: this.config.get<boolean>('SMTP_SECURE', false),
+        auth: {
+          user: this.config.get<string>('SMTP_USER'),
+          pass: this.config.get<string>('SMTP_PASS'),
+        },
+      });
+    }
   }
 
   async onModuleInit(): Promise<void> {
