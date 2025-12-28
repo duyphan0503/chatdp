@@ -6,15 +6,15 @@ on:
       - main
       - develop
     paths:
-      - 'apps/frontend/**'
-      - '.github/workflows/frontend.yml'
+      - "apps/frontend/**"
+      - ".github/workflows/frontend.yml"
   pull_request:
     branches:
       - main
       - develop
     paths:
-      - 'apps/frontend/**'
-      - '.github/workflows/frontend.yml'
+      - "apps/frontend/**"
+      - ".github/workflows/frontend.yml"
   workflow_dispatch:
 
 jobs:
@@ -45,6 +45,9 @@ jobs:
 
       - name: Flutter pub get
         run: flutter pub get
+
+      - name: Create .env file
+        run: cp .env.example .env
 
       - name: Flutter analyze
         run: flutter analyze
