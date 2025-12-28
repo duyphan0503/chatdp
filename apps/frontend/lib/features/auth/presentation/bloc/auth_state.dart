@@ -25,3 +25,9 @@ class AuthError extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+class AuthOtpResent extends AuthState {}
+
+class AuthPasswordResetEmailSent extends AuthState {}
+
+class AuthPasswordResetSuccess extends AuthState {}

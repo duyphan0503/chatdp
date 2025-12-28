@@ -20,6 +20,7 @@ import '../../features/auth/data/repositories/auth_repository_impl.dart'
     as _i153;
 import '../../features/auth/domain/repositories/auth_repository.dart' as _i787;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
+import '../network/auth_interceptor.dart' as _i908;
 import '../network/dio_client.dart' as _i667;
 import 'storage_module.dart' as _i371;
 
@@ -33,7 +34,12 @@ extension GetItInjectableX on _i174.GetIt {
     final storageModule = _$StorageModule();
     final networkModule = _$NetworkModule();
     gh.lazySingleton<_i558.FlutterSecureStorage>(() => storageModule.storage);
-    gh.lazySingleton<_i361.Dio>(() => networkModule.dio);
+    gh.factory<_i908.AuthInterceptor>(
+      () => _i908.AuthInterceptor(gh<_i558.FlutterSecureStorage>()),
+    );
+    gh.lazySingleton<_i361.Dio>(
+      () => networkModule.dio(gh<_i908.AuthInterceptor>()),
+    );
     gh.lazySingleton<_i107.AuthRemoteDataSource>(
       () => _i107.AuthRemoteDataSourceImpl(
         gh<_i361.Dio>(),

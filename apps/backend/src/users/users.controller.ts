@@ -12,7 +12,7 @@ interface JwtUserRequest {
 /**
  * HTTP endpoints for user-facing profile information.
  */
-@Controller()
+@Controller('users')
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
@@ -31,7 +31,7 @@ export class UsersController {
    * or 404 if the user does not exist.
    */
   @UseGuards(JwtAuthGuard)
-  @Get('users/profile/:id')
+  @Get('profile/:id')
   async getProfile(@Param('id') id: string): Promise<{ id: string; email: string | null }> {
     const user = await this.users.getCachedById(id);
     if (!user) {

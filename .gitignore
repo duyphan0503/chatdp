@@ -21,3 +21,10 @@ apps/backend/.turbo/
 .pub-cache/
 .melos_tool/
 .env.test.local
+
+# Secrets and credentials
+/secrets/
+client_secret_*.json
+upload-keystore.jks
+key.properties
+

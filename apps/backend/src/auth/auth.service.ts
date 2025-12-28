@@ -91,7 +91,13 @@ export class AuthService {
       const updatedUser = await this.users.updateDisplayName(existing.id, params.displayName);
 
       try {
+        this.logger.log(
+          `[Existing User] Attempting to resend verification email for: ${updatedUser.email}`,
+        );
         await this.sendVerificationEmail(updatedUser.id);
+        this.logger.log(
+          `[Existing User] Verification email sent successfully to: ${updatedUser.email}`,
+        );
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         this.logger.warn(`Failed to resend verification email during signup: ${msg}`);
@@ -109,10 +115,15 @@ export class AuthService {
 
     // Automatically send verification email
     try {
+      this.logger.log(`Attempting to send verification email to user: ${user.id} (${user.email})`);
       await this.sendVerificationEmail(user.id);
+      this.logger.log(`Verification email sent successfully to: ${user.email}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Failed to send verification email during signup: ${msg}`);
+      this.logger.error(
+        `Failed to send verification email during signup: ${msg}`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
 
     return this.issueTokens(user, ctx);
@@ -148,8 +159,16 @@ export class AuthService {
   }
 
   async sendVerificationEmail(userId: string): Promise<void> {
+    this.logger.log(`sendVerificationEmail check for userId: ${userId}`);
     const user = await this.users.findById(userId);
-    if (!user || user.emailVerified) return;
+    if (!user) {
+      this.logger.warn(`User not found for ID: ${userId}`);
+      return;
+    }
+    if (user.emailVerified) {
+      this.logger.log(`User ${userId} already verified. Skipping email.`);
+      return;
+    }
     if (!user.email) throw new BadRequestException('User needs an email to verify');
 
     const otp = await this.otpService.generateOtp(user.email, 'verify');

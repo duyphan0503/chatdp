@@ -10,4 +10,8 @@ abstract class AuthRepository {
     required String password,
   });
   Future<UserEntity> verifyEmail(String email, String otp);
+  Future<void> resendVerificationEmail(String email);
+  Future<void> forgotPassword(String email);
+  Future<void> resetPassword(String email, String otp, String newPassword);
+  Future<UserEntity> googleLogin();
 }
