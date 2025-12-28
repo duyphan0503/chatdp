@@ -58,5 +58,10 @@
   "english": "Tiếng Anh",
   "vietnamese": "Tiếng Việt",
   "invalidCredentials": "Email hoặc mật khẩu không chính xác",
-  "emailAlreadyRegistered": "Email đã được đăng ký. Vui lòng đăng nhập"
+  "emailAlreadyRegistered": "Email đã được đăng ký. Vui lòng đăng nhập",
+  "themeMode": "Chế độ giao diện",
+  "themeLight": "Sáng",
+  "themeDark": "Tối",
+  "themeSystem": "Hệ thống (mặc định)",
+  "logout": "Đăng xuất"
 }

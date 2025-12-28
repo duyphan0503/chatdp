@@ -194,4 +194,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get emailAlreadyRegistered =>
       'Email is already registered. Please sign in';
+
+  @override
+  String get themeMode => 'Theme Mode';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System (default)';
+
+  @override
+  String get logout => 'Logout';
 }

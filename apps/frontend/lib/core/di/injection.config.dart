@@ -29,6 +29,7 @@ import '../../features/settings/domain/repositories/settings_repository.dart'
     as _i674;
 import '../../features/settings/presentation/cubit/language_cubit.dart'
     as _i530;
+import '../../features/settings/presentation/cubit/theme_cubit.dart' as _i124;
 import '../network/auth_interceptor.dart' as _i908;
 import '../network/dio_client.dart' as _i667;
 import 'storage_module.dart' as _i371;
@@ -58,6 +59,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i530.LanguageCubit>(
       () => _i530.LanguageCubit(gh<_i674.SettingsRepository>()),
+    );
+    gh.factory<_i124.ThemeCubit>(
+      () => _i124.ThemeCubit(gh<_i674.SettingsRepository>()),
     );
     gh.lazySingleton<_i361.Dio>(
       () => networkModule.dio(gh<_i908.AuthInterceptor>()),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../cubit/language_cubit.dart';
+import '../cubit/theme_cubit.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -9,33 +11,119 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navSettings)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              l10n.selectLanguage,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
+      appBar: AppBar(title: Text(l10n.navSettings), centerTitle: true),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          _buildSectionHeader(context, l10n.language),
+          _buildLanguageSelector(context, l10n),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Divider(),
+          ),
+          _buildSectionHeader(context, l10n.themeMode),
+          _buildThemeSelector(context, l10n),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Divider(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: OutlinedButton.icon(
               onPressed: () {
-                context.read<LanguageCubit>().changeLanguage('en');
+                context.read<AuthBloc>().add(const AuthLogoutRequested());
               },
-              child: Text(l10n.english),
+              icon: const Icon(Icons.logout),
+              label: Text(l10n.logout),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                context.read<LanguageCubit>().changeLanguage('vi');
-              },
-              child: Text(l10n.vietnamese),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Text(
+        title.toUpperCase(),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
         ),
       ),
+    );
+  }
+
+  Widget _buildLanguageSelector(BuildContext context, AppLocalizations l10n) {
+    return BlocBuilder<LanguageCubit, Locale>(
+      builder: (context, locale) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment<String>(
+                value: 'en',
+                label: Text(l10n.english),
+                icon: const Icon(Icons.language),
+              ),
+              ButtonSegment<String>(
+                value: 'vi',
+                label: Text(l10n.vietnamese),
+                icon: const Icon(Icons.translate),
+              ),
+            ],
+            selected: {locale.languageCode},
+            onSelectionChanged: (Set<String> newSelection) {
+              context.read<LanguageCubit>().changeLanguage(newSelection.first);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeSelector(BuildContext context, AppLocalizations l10n) {
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SegmentedButton<ThemeMode>(
+            segments: [
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.system,
+                label: Text(l10n.themeSystem),
+                icon: const Icon(Icons.brightness_auto),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.light,
+                label: Text(l10n.themeLight),
+                icon: const Icon(Icons.light_mode),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.dark,
+                label: Text(l10n.themeDark),
+                icon: const Icon(Icons.dark_mode),
+              ),
+            ],
+            selected: {themeMode},
+            onSelectionChanged: (Set<ThemeMode> newSelection) {
+              context.read<ThemeCubit>().changeTheme(newSelection.first);
+            },
+          ),
+        );
+      },
     );
   }
 }

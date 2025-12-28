@@ -195,4 +195,19 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get emailAlreadyRegistered =>
       'Email đã được đăng ký. Vui lòng đăng nhập';
+
+  @override
+  String get themeMode => 'Chế độ giao diện';
+
+  @override
+  String get themeLight => 'Sáng';
+
+  @override
+  String get themeDark => 'Tối';
+
+  @override
+  String get themeSystem => 'Hệ thống (mặc định)';
+
+  @override
+  String get logout => 'Đăng xuất';
 }
