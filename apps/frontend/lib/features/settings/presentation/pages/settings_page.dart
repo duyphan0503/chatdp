@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../cubit/language_cubit.dart';
 import '../cubit/theme_cubit.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -24,6 +25,28 @@ class SettingsPage extends StatelessWidget {
           ),
           _buildSectionHeader(context, l10n.themeMode),
           _buildThemeSelector(context, l10n),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Divider(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                context.read<AuthBloc>().add(const AuthLogoutRequested());
+              },
+              icon: const Icon(Icons.logout),
+              label: Text(l10n.logout),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

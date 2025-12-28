@@ -62,5 +62,6 @@
   "themeMode": "Chế độ giao diện",
   "themeLight": "Sáng",
   "themeDark": "Tối",
-  "themeSystem": "Hệ thống (mặc định)"
+  "themeSystem": "Hệ thống (mặc định)",
+  "logout": "Đăng xuất"
 }

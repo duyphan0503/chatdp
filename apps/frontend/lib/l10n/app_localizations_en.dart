@@ -206,4 +206,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSystem => 'System (default)';
+
+  @override
+  String get logout => 'Logout';
 }

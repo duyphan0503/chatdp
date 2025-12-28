@@ -62,5 +62,6 @@
   "themeMode": "Theme Mode",
   "themeLight": "Light",
   "themeDark": "Dark",
-  "themeSystem": "System (default)"
+  "themeSystem": "System (default)",
+  "logout": "Logout"
 }

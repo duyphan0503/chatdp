@@ -207,4 +207,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get themeSystem => 'Hệ thống (mặc định)';
+
+  @override
+  String get logout => 'Đăng xuất';
 }
