@@ -14,4 +14,11 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<void> setLanguage(String languageCode) =>
       _localDataSource.cacheLanguageCode(languageCode);
+
+  @override
+  Future<String?> getThemeMode() => _localDataSource.getCachedThemeMode();
+
+  @override
+  Future<void> setThemeMode(String themeMode) =>
+      _localDataSource.cacheThemeMode(themeMode);
 }
