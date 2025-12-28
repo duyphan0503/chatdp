@@ -25,9 +25,13 @@ List<RouteBase> authRoutes() {
     GoRoute(
       path: AppRoutes.otpVerification,
       builder: (context, state) {
-        final email =
-            (state.extra as Map<String, dynamic>?)?['email'] as String?;
-        return OtpVerificationPage(email: email ?? '');
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String? ?? '';
+        final isResetPassword = extra?['isResetPassword'] as bool? ?? false;
+        return OtpVerificationPage(
+          email: email,
+          isResetPassword: isResetPassword,
+        );
       },
     ),
     GoRoute(
@@ -37,8 +41,10 @@ List<RouteBase> authRoutes() {
     GoRoute(
       path: AppRoutes.resetPassword,
       builder: (context, state) {
-        // final token = (state.extra as Map<String, dynamic>?)?['token'] as String?;
-        return const ResetPasswordPage();
+        final extra = state.extra as Map<String, dynamic>;
+        final email = extra['email'] as String;
+        final otp = extra['otp'] as String;
+        return ResetPasswordPage(email: email, otp: otp);
       },
     ),
   ];

@@ -38,3 +38,32 @@ class AuthVerifyOtpRequested extends AuthEvent {
 }
 
 class AuthLogoutRequested extends AuthEvent {}
+
+class AuthResendOtpRequested extends AuthEvent {
+  final String email;
+  const AuthResendOtpRequested(this.email);
+  @override
+  List<Object?> get props => [email];
+}
+
+class AuthForgotPasswordRequested extends AuthEvent {
+  final String email;
+  const AuthForgotPasswordRequested(this.email);
+  @override
+  List<Object?> get props => [email];
+}
+
+class AuthResetPasswordRequested extends AuthEvent {
+  final String email;
+  final String otp;
+  final String newPassword;
+  const AuthResetPasswordRequested({
+    required this.email,
+    required this.otp,
+    required this.newPassword,
+  });
+  @override
+  List<Object?> get props => [email, otp, newPassword];
+}
+
+class AuthGoogleLoginRequested extends AuthEvent {}

@@ -27,6 +27,7 @@ class $AssetsLottieGen {
 class Assets {
   const Assets._();
 
+  static const String aEnv = '.env';
   static const AssetGenImage logo = AssetGenImage('assets/logo.png');
   static const AssetGenImage logoTransparent = AssetGenImage(
     'assets/logo_transparent.png',
@@ -34,7 +35,7 @@ class Assets {
   static const $AssetsLottieGen lottie = $AssetsLottieGen();
 
   /// List of all assets
-  static List<AssetGenImage> get values => [logo, logoTransparent];
+  static List<dynamic> get values => [aEnv, logo, logoTransparent];
 }
 
 class AssetGenImage {

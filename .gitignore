@@ -1,22 +1,79 @@
+# ----------------------
+# Misc & OS
+# ----------------------
+.DS_Store
+.thumbnails
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ----------------------
+# Node / JS / Monorepo
+# ----------------------
 node_modules/
 dist/
 coverage/
 .pnpm-store/
-.DS_Store
-.env
-!.env.example
-.prisma/
-.idea/
-AGENTS.md
-*.postman_environment.json
-
-# Turborepo cache
 .turbo/
 apps/backend/.turbo/
+.prisma/
 
-# Flutter
-**/build/
+# ----------------------
+# Dart / Flutter Core
+# ----------------------
+.dart_tool/
 .flutter-plugins
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
-.melos_tool/
+.pub/
+**/build/
+**/doc/api/
+
+# ----------------------
+# Android
+# ----------------------
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/android/**/*.jks
+**/android/**/*.keystore
+**/android/app/src/main/assets/secrets/
+
+# ----------------------
+# iOS / macOS
+# ----------------------
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/gen_snapshot.sh
+**/ios/.generated/
+**/ios/Pods/
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# ----------------------
+# Linux
+# ----------------------
+**/linux/flutter/ephemeral/
+
+# ----------------------
+# Windows
+# ----------------------
+**/windows/flutter/ephemeral/
+
+# ----------------------
+# Secret & Env
+# ----------------------
+.env
+.env.*
+!.env.example
+/secrets/
+client_secret_*.json
+*.postman_environment.json
+
+# ----------------------
+# Other
+# ----------------------
+AGENTS.md

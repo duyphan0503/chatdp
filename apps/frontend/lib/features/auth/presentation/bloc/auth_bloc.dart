@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 
 import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/user_entity.dart';
@@ -15,9 +17,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   AuthBloc(this._authRepository) : super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
-    on<AuthLoginRequested>(_onAuthLoginRequested);
-    on<AuthRegisterRequested>(_onAuthRegisterRequested);
-    on<AuthVerifyOtpRequested>(_onAuthVerifyOtpRequested);
+    on<AuthLoginRequested>(_onAuthLoginRequested, transformer: droppable());
+    on<AuthRegisterRequested>(
+      _onAuthRegisterRequested,
+      transformer: droppable(),
+    );
+    on<AuthVerifyOtpRequested>(
+      _onAuthVerifyOtpRequested,
+      transformer: droppable(),
+    );
+    on<AuthResendOtpRequested>(
+      _onAuthResendOtpRequested,
+      transformer: droppable(),
+    );
+    on<AuthForgotPasswordRequested>(
+      _onAuthForgotPasswordRequested,
+      transformer: droppable(),
+    );
+    on<AuthResetPasswordRequested>(
+      _onAuthResetPasswordRequested,
+      transformer: droppable(),
+    );
+    on<AuthGoogleLoginRequested>(
+      _onAuthGoogleLoginRequested,
+      transformer: droppable(),
+    );
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
   }
 
@@ -51,7 +75,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(Authenticated(user));
     } catch (e, stackTrace) {
       AppLogger.error('Login failed for email: ${event.email}', e, stackTrace);
-      emit(AuthError(e.toString())); // Simplified error propagation
+      emit(AuthError(_getErrorMessage(e)));
     }
   }
 
@@ -73,7 +97,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         e,
         stackTrace,
       );
-      emit(AuthError(e.toString()));
+      emit(AuthError(_getErrorMessage(e)));
     }
   }
 
@@ -91,8 +115,46 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         e,
         stackTrace,
       );
-      emit(AuthError(e.toString()));
+      emit(AuthError(_getErrorMessage(e)));
     }
+  }
+
+  String _getErrorMessage(Object error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Connection timed out. Please check your internet connection.';
+        case DioExceptionType.connectionError:
+          return 'No internet connection.';
+        case DioExceptionType.badResponse:
+          final statusCode = error.response?.statusCode;
+          final serverMessage = error.response?.data['message'];
+
+          if (statusCode == 401) {
+            return 'Incorrect email or password.';
+          } else if (statusCode == 409) {
+            return 'Email is already registered. Please sign in.';
+          } else if (statusCode == 400) {
+            if (serverMessage != null && serverMessage.toString().isNotEmpty) {
+              return serverMessage.toString();
+            }
+            return 'Invalid information provided.';
+          } else if (statusCode == 404) {
+            return 'User not found.';
+          } else if (statusCode == 500) {
+            return 'Server error. Please try again later.';
+          }
+          if (serverMessage != null) return serverMessage.toString();
+          return 'Server returned an error: $statusCode';
+        case DioExceptionType.cancel:
+          return 'Request cancelled.';
+        default:
+          return 'Network error occurred. Please try again.';
+      }
+    }
+    return error.toString().replaceFirst('Exception: ', '');
   }
 
   Future<void> _onAuthLogoutRequested(
@@ -101,5 +163,77 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     await _authRepository.logout();
     emit(Unauthenticated());
+  }
+
+  Future<void> _onAuthResendOtpRequested(
+    AuthResendOtpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.resendVerificationEmail(event.email);
+      emit(AuthOtpResent());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Resend OTP failed for email: ${event.email}',
+        e,
+        stackTrace,
+      );
+      emit(AuthError(_getErrorMessage(e)));
+    }
+  }
+
+  Future<void> _onAuthForgotPasswordRequested(
+    AuthForgotPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.forgotPassword(event.email);
+      emit(AuthPasswordResetEmailSent());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Forgot password failed for email: ${event.email}',
+        e,
+        stackTrace,
+      );
+      emit(AuthError(_getErrorMessage(e)));
+    }
+  }
+
+  Future<void> _onAuthResetPasswordRequested(
+    AuthResetPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.resetPassword(
+        event.email,
+        event.otp,
+        event.newPassword,
+      );
+      emit(AuthPasswordResetSuccess());
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Reset password failed for email: ${event.email}',
+        e,
+        stackTrace,
+      );
+      emit(AuthError(_getErrorMessage(e)));
+    }
+  }
+
+  Future<void> _onAuthGoogleLoginRequested(
+    AuthGoogleLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authRepository.googleLogin();
+      emit(Authenticated(user));
+    } catch (e, stackTrace) {
+      AppLogger.error('Google login failed', e, stackTrace);
+      emit(AuthError(_getErrorMessage(e)));
+    }
   }
 }

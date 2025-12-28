@@ -5,6 +5,14 @@ class EnvConfig {
   static String get baseUrl => _get('BASE_URL');
   static int get connectTimeout => int.parse(_get('CONNECT_TIMEOUT'));
   static int get receiveTimeout => int.parse(_get('RECEIVE_TIMEOUT'));
+  static String get googleClientId => _get('GOOGLE_CLIENT_ID');
+  static String get googleClientSecret => _get('GOOGLE_CLIENT_SECRET');
+  static int get googleRedirectPort => int.parse(_get('GOOGLE_REDIRECT_PORT'));
+
+  static String get googleClientIdAndroid => _get('GOOGLE_CLIENT_ID_ANDROID');
+  static String get googleClientIdDesktop => _get('GOOGLE_CLIENT_ID_DESKTOP');
+  static String get googleClientSecretDesktop =>
+      _get('GOOGLE_CLIENT_SECRET_DESKTOP');
 
   static Future<void> init() async {
     try {

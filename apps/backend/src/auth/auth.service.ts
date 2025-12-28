@@ -3,6 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -28,6 +29,7 @@ export interface AuthTokens {
     email: string | null;
     displayName: string;
     avatarUrl: string | null;
+    isEmailVerified: boolean;
   };
 }
 
@@ -46,6 +48,7 @@ type RefreshContext = { userAgent?: string | null; ip?: string | null };
  */
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private googleClient: OAuth2Client;
 
   constructor(
@@ -77,7 +80,31 @@ export class AuthService {
     ctx?: RefreshContext,
   ): Promise<AuthTokens> {
     const existing = params.email ? await this.users.findByEmail(params.email) : null;
-    if (existing) throw new ConflictException('Email already registered');
+    if (existing) {
+      if (existing.emailVerified) {
+        throw new ConflictException('Email already registered');
+      }
+
+      // Handle unverified user: Update credentials and resend verification
+      const passwordHash = await argon2.hash(params.password);
+      await this.users.updatePassword(existing.email!, passwordHash);
+      const updatedUser = await this.users.updateDisplayName(existing.id, params.displayName);
+
+      try {
+        this.logger.log(
+          `[Existing User] Attempting to resend verification email for: ${updatedUser.email}`,
+        );
+        await this.sendVerificationEmail(updatedUser.id);
+        this.logger.log(
+          `[Existing User] Verification email sent successfully to: ${updatedUser.email}`,
+        );
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`Failed to resend verification email during signup: ${msg}`);
+      }
+
+      return this.issueTokens(updatedUser, ctx);
+    }
 
     const passwordHash = await argon2.hash(params.password);
     const user = await this.users.create({
@@ -85,6 +112,20 @@ export class AuthService {
       passwordHash,
       displayName: params.displayName,
     });
+
+    // Automatically send verification email
+    try {
+      this.logger.log(`Attempting to send verification email to user: ${user.id} (${user.email})`);
+      await this.sendVerificationEmail(user.id);
+      this.logger.log(`Verification email sent successfully to: ${user.email}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to send verification email during signup: ${msg}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+
     return this.issueTokens(user, ctx);
   }
 
@@ -105,12 +146,29 @@ export class AuthService {
     const valid = await argon2.verify(user.passwordHash, params.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
+    if (!user.emailVerified) {
+      try {
+        await this.sendVerificationEmail(user.id);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`Failed to resend verification email during login: ${msg}`);
+      }
+    }
+
     return this.issueTokens(user, ctx);
   }
 
   async sendVerificationEmail(userId: string): Promise<void> {
+    this.logger.log(`sendVerificationEmail check for userId: ${userId}`);
     const user = await this.users.findById(userId);
-    if (!user || user.emailVerified) return;
+    if (!user) {
+      this.logger.warn(`User not found for ID: ${userId}`);
+      return;
+    }
+    if (user.emailVerified) {
+      this.logger.log(`User ${userId} already verified. Skipping email.`);
+      return;
+    }
     if (!user.email) throw new BadRequestException('User needs an email to verify');
 
     const otp = await this.otpService.generateOtp(user.email, 'verify');
@@ -324,6 +382,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl ?? null,
+        isEmailVerified: !!user.emailVerified,
       },
     };
   }
