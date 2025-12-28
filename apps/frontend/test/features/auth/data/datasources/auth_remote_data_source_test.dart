@@ -146,9 +146,7 @@ void main() {
         // 2. Mock getProfile call
         final profileResponse = MockResponse();
         when(() => profileResponse.data).thenReturn(tUserModel.toJson());
-        when(
-          () => mockDio.get('/users/me'),
-        ).thenAnswer((_) async => profileResponse);
+        when(() => mockDio.get('/me')).thenAnswer((_) async => profileResponse);
 
         // Act
         final result = await dataSource.verifyEmail(tEmail, tOtp);
@@ -162,7 +160,7 @@ void main() {
             data: {'email': tEmail, 'otp': tOtp},
           ),
         ).called(1);
-        verify(() => mockDio.get('/users/me')).called(1);
+        verify(() => mockDio.get('/me')).called(1);
       },
     );
   });
