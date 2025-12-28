@@ -445,6 +445,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fpdart:
+    dependency: "direct main"
+    description:
+      name: fpdart
+      sha256: f8e9d0989ba293946673e382c59ac513e30cb6746a9452df195f29e3357a73d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   freezed:
     dependency: "direct dev"
     description:
@@ -1395,7 +1403,7 @@ packages:
     source: hosted
     version: "1.0.1"
   web_socket_channel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web_socket_channel
       sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8

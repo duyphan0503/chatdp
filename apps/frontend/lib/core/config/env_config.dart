@@ -3,6 +3,7 @@ import '../utils/app_logger.dart';
 
 class EnvConfig {
   static String get baseUrl => _get('BASE_URL');
+  static String get wsUrl => _get('WS_URL');
   static int get connectTimeout => int.parse(_get('CONNECT_TIMEOUT'));
   static int get receiveTimeout => int.parse(_get('RECEIVE_TIMEOUT'));
   static String get googleClientId => _get('GOOGLE_CLIENT_ID');

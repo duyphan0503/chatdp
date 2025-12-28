@@ -21,6 +21,8 @@ dependencies:
 
   # Networking
   dio: ^5.7.0
+  web_socket_channel: ^3.0.1
+  fpdart: ^1.2.0
 
   # DI
   get_it: ^9.2.0
