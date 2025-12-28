@@ -188,4 +188,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get vietnamese => 'Tiếng Việt';
+
+  @override
+  String get invalidCredentials => 'Email hoặc mật khẩu không chính xác';
+
+  @override
+  String get emailAlreadyRegistered =>
+      'Email đã được đăng ký. Vui lòng đăng nhập';
 }

@@ -133,9 +133,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           final serverMessage = error.response?.data['message'];
 
           if (statusCode == 401) {
-            return 'Incorrect email or password.';
+            return 'invalidCredentials';
           } else if (statusCode == 409) {
-            return 'Email is already registered. Please sign in.';
+            return 'emailAlreadyRegistered';
           } else if (statusCode == 400) {
             if (serverMessage != null && serverMessage.toString().isNotEmpty) {
               return serverMessage.toString();

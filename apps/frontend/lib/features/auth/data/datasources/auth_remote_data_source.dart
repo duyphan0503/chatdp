@@ -49,7 +49,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel?> getProfile() async {
     try {
-      final response = await _dio.get('/users/me');
+      final response = await _dio.get('/me');
       return UserModel.fromJson(response.data);
     } catch (e) {
       // The method implicitly returns null if an error occurs

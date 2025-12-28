@@ -439,6 +439,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tiếng Việt'**
   String get vietnamese;
+
+  /// No description provided for @invalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password'**
+  String get invalidCredentials;
+
+  /// No description provided for @emailAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is already registered. Please sign in'**
+  String get emailAlreadyRegistered;
 }
 
 class _AppLocalizationsDelegate

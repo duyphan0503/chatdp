@@ -95,9 +95,17 @@ class _RegisterPageState extends State<RegisterPage> {
                   context.go(AppRoutes.chat);
                 }
               } else if (state is AuthError) {
+                final l10n = AppLocalizations.of(context)!;
+                String errorMessage = state.message;
+                if (state.message == 'invalidCredentials') {
+                  errorMessage = l10n.invalidCredentials;
+                } else if (state.message == 'emailAlreadyRegistered') {
+                  errorMessage = l10n.emailAlreadyRegistered;
+                }
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.message),
+                    content: Text(errorMessage),
                     backgroundColor: Colors.redAccent,
                     behavior: SnackBarBehavior.floating,
                   ),

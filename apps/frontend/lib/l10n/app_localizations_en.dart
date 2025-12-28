@@ -187,4 +187,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vietnamese => 'Tiếng Việt';
+
+  @override
+  String get invalidCredentials => 'Incorrect email or password';
+
+  @override
+  String get emailAlreadyRegistered =>
+      'Email is already registered. Please sign in';
 }
