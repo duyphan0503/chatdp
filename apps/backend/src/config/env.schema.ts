@@ -140,14 +140,6 @@ export const envSchema = z.object({
     .int()
     .positive()
     .default(10 * 1024 * 1024 * 1024),
-
-  // SMTP Configuration
-  SMTP_HOST: z.string({ required_error: 'SMTP_HOST is required' }),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_USER: z.string({ required_error: 'SMTP_USER is required' }),
-  SMTP_PASS: z.string({ required_error: 'SMTP_PASS is required' }),
-  SMTP_FROM: z.string().default('"ChatDP" <no-reply@chatdp.com>'),
-  SMTP_SECURE: z.coerce.boolean().default(false),
 });
 
 // TypeScript type automatically inferred from the schema (single source of truth)

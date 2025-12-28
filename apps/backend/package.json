@@ -31,30 +31,27 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.4.20",
-    "@nestjs/swagger": "^7.4.2",
     "@nestjs/throttler": "^5.2.0",
     "@nestjs/websockets": "^10.4.20",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
-    "@types/nodemailer": "^7.0.4",
     "argon2": "^0.40.3",
     "cache-manager": "^7.2.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
-    "express": "^4.21.2",
-    "google-auth-library": "^9.14.2",
     "helmet": "^7.1.0",
+    "express": "^4.21.2",
     "ioredis": "^5.8.2",
     "mongodb": "^6.10.0",
-    "nodemailer": "^7.0.11",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prom-client": "^15.1.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
-    "swagger-ui-express": "^5.0.1",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@nestjs/swagger": "^7.4.2",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -78,6 +75,6 @@
     "typescript": "^5.4.0"
   },
   "prisma": {
-    "seed": "node --loader ts-node/esm prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts"
   }
 }

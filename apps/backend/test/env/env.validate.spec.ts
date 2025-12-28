@@ -8,9 +8,6 @@ describe('Environment validation', () => {
       DATABASE_URL: 'https://example.com',
       JWT_SECRET: 'x'.repeat(32),
       CORS_ORIGINS: '*',
-      SMTP_HOST: 'smtp.example.com',
-      SMTP_USER: 'user',
-      SMTP_PASS: 'pass',
     } as Record<string, unknown>;
     const validated = validate(raw);
     expect(validated.PORT).toBe(4000);
@@ -24,9 +21,6 @@ describe('Environment validation', () => {
       DATABASE_URL: 'https://example.com',
       JWT_SECRET: 'short',
       CORS_ORIGINS: '*',
-      SMTP_HOST: 'smtp.example.com',
-      SMTP_USER: 'user',
-      SMTP_PASS: 'pass',
     } as Record<string, unknown>;
     expect(() => validate(raw)).toThrow(/Environment validation failed/);
   });
@@ -38,9 +32,6 @@ describe('Environment validation', () => {
       DATABASE_URL: 'https://example.com',
       JWT_SECRET: 'y'.repeat(40),
       CORS_ORIGINS: 'https://a.test, https://b.test , https://c.test',
-      SMTP_HOST: 'smtp.example.com',
-      SMTP_USER: 'user',
-      SMTP_PASS: 'pass',
     } as Record<string, unknown>;
     const validated = validate(raw);
     expect(validated.CORS_ORIGINS).toEqual(['https://a.test', 'https://b.test', 'https://c.test']);
@@ -50,9 +41,6 @@ describe('Environment validation', () => {
     const raw = {
       DATABASE_URL: 'https://example.com',
       JWT_SECRET: 'z'.repeat(33),
-      SMTP_HOST: 'smtp.example.com',
-      SMTP_USER: 'user',
-      SMTP_PASS: 'pass',
     } as Record<string, unknown>;
     const validated = validate(raw);
     expect(validated.PORT).toBe(3000); // default

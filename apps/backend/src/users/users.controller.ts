@@ -31,7 +31,7 @@ export class UsersController {
    * or 404 if the user does not exist.
    */
   @UseGuards(JwtAuthGuard)
-  @Get('profile/:id')
+  @Get('users/profile/:id')
   async getProfile(@Param('id') id: string): Promise<{ id: string; email: string | null }> {
     const user = await this.users.getCachedById(id);
     if (!user) {
