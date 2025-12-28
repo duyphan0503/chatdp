@@ -75,6 +75,5 @@ try {
   process.env.USE_MONGO_READ_MODEL = 'false';
   process.env.MONGO_PROJECTOR_ENABLED = 'false';
 } catch (e) {
-  // eslint-disable-next-line no-console
   console.warn('[jest-setup] Failed to provision test env:', e && e.message);
 }
