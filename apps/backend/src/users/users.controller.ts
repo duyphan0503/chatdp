@@ -12,7 +12,7 @@ interface JwtUserRequest {
 /**
  * HTTP endpoints for user-facing profile information.
  */
-@Controller('users')
+@Controller()
 export class UsersController {
   constructor(private readonly users: UsersService) {}
 
