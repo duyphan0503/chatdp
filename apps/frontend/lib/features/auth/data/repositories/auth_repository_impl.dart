@@ -122,4 +122,20 @@ class AuthRepositoryImpl implements AuthRepository {
 
     return userModel.toEntity();
   }
+
+  @override
+  Future<UserEntity> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final userModel = await _dataSource.register(name, email, password);
+    return userModel.toEntity();
+  }
+
+  @override
+  Future<UserEntity> verifyEmail(String email, String otp) async {
+    final userModel = await _dataSource.verifyEmail(email, otp);
+    return userModel.toEntity();
+  }
 }
