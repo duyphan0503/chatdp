@@ -14,6 +14,37 @@ try {
     fs.copyFileSync(envExample, envPath);
   }
 
+  // Load .env if it exists (for CI or local dev)
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split('\n').forEach((line) => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim().replace(/^['"]|['"]$/g, '');
+        // Only set if not already set (preserve system env vars)
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    });
+  }
+
+  // Load .env.test.local if it exists (for local overrides)
+  const localEnvPath = path.join(rootDir, '.env.test.local');
+  if (fs.existsSync(localEnvPath)) {
+    const content = fs.readFileSync(localEnvPath, 'utf8');
+    content.split('\n').forEach((line) => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim().replace(/^['"]|['"]$/g, '');
+        // Force override for local test config
+        process.env[key] = value;
+      }
+    });
+  }
+
   // Ensure robust defaults via process.env (do not overwrite if already set)
   if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 32) {
     process.env.JWT_SECRET = 'local_e2e_secret_abcdefghijklmnopqrstuvwxyz_123456';
@@ -24,7 +55,14 @@ try {
 
   // Ensure DATABASE_URL present (may still require a running DB when tests use it)
   if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = 'postgresql://chatdp:chatdp@localhost:5432/chatdp?schema=public';
+    // Default to a placeholder that will fail unless overridden by env vars
+    // User must provide DATABASE_URL in environment or .env file
+    process.env.DATABASE_URL = 'postgresql://user:pass@127.0.0.1:5432/db';
+  }
+
+  // Ensure REDIS_URL is present for local tests
+  if (!process.env.REDIS_URL) {
+    process.env.REDIS_URL = 'redis://:pass@127.0.0.1:6379';
   }
 
   // Relax HTTP rate limiting for E2E runs to avoid flakiness
@@ -37,6 +75,5 @@ try {
   process.env.USE_MONGO_READ_MODEL = 'false';
   process.env.MONGO_PROJECTOR_ENABLED = 'false';
 } catch (e) {
-  // eslint-disable-next-line no-console
   console.warn('[jest-setup] Failed to provision test env:', e && e.message);
 }
