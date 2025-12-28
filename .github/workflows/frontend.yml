@@ -1,35 +1,56 @@
 name: Frontend CI
+
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
     paths:
       - 'apps/frontend/**'
       - '.github/workflows/frontend.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
     paths:
       - 'apps/frontend/**'
+      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
+
 jobs:
   flutter:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Check Flutter app presence
-        id: check
-        run: |
-          if [ -f apps/frontend/pubspec.yaml ]; then echo "has=true" >> $GITHUB_OUTPUT; else echo "has=false" >> $GITHUB_OUTPUT; fi
-      - name: Setup Flutter
-        if: steps.check.outputs.has == 'true'
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('apps/frontend/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
       - name: Flutter pub get
-        if: steps.check.outputs.has == 'true'
-        run: |
-          cd apps/frontend
-          flutter pub get
-      - name: Test
-        if: steps.check.outputs.has == 'true'
-        run: |
-          cd apps/frontend
-          flutter test
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Build web (sanity check)
+        run: flutter build web --release --no-source-maps
