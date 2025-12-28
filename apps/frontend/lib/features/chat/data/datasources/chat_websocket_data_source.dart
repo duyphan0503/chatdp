@@ -52,6 +52,10 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
 
   StreamSubscription? _channelSubscription;
   bool _isConnected = false;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5;
+  static const Duration _initialReconnectDelay = Duration(seconds: 1);
+  Timer? _reconnectTimer;
 
   ChatWebSocketDataSource(this._storage);
 
@@ -96,12 +100,30 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
       );
 
       _isConnected = true;
+      _reconnectAttempts = 0; // Reset on successful connection
       _connectionStateController.add(WebSocketConnectionState.connected);
     } catch (e) {
       _connectionStateController.add(WebSocketConnectionState.error);
       _isConnected = false;
+      _scheduleReconnect();
       rethrow;
     }
+  }
+
+  /// Schedule reconnection with exponential backoff
+  void _scheduleReconnect() {
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      _connectionStateController.add(WebSocketConnectionState.error);
+      return;
+    }
+
+    _reconnectAttempts++;
+    final delay = _initialReconnectDelay * (1 << (_reconnectAttempts - 1));
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(delay, () {
+      connect();
+    });
   }
 
   @override
@@ -208,15 +230,18 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
   void _handleError(dynamic error) {
     _connectionStateController.add(WebSocketConnectionState.error);
     _isConnected = false;
+    _scheduleReconnect(); // Auto-reconnect on error
   }
 
   void _handleDone() {
     _connectionStateController.add(WebSocketConnectionState.disconnected);
     _isConnected = false;
+    _scheduleReconnect(); // Auto-reconnect on disconnect
   }
 
-  @override
+  @disposeMethod
   void dispose() {
+    _reconnectTimer?.cancel();
     _channelSubscription?.cancel();
     _channel?.sink.close();
     _messageController.close();
