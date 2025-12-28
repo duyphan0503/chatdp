@@ -189,7 +189,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                               ),
                             ),
-                            validator: AppValidators.email,
+                            validator: (v) => AppValidators.email(context, v),
                           ),
                           const SizedBox(height: 32),
 

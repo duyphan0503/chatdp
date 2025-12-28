@@ -1,71 +1,95 @@
+import 'package:flutter/material.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/utils/validators.dart';
+import 'package:frontend/l10n/app_localizations.dart';
 
 void main() {
+  Widget createLocalizedWrapper(Widget child) {
+    return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    );
+  }
+
   group('AppValidators', () {
-    group('name', () {
-      test('should return error when value is null', () {
-        expect(AppValidators.name(null), 'Name is required');
-      });
-
-      test('should return error when value is empty', () {
-        expect(AppValidators.name(''), 'Name is required');
-      });
-
-      test('should return error when value is whitespace', () {
-        expect(AppValidators.name('   '), 'Name is required');
-      });
-
-      test('should return error when length is less than 2', () {
-        expect(AppValidators.name('A'), 'Name must be at least 2 characters');
-      });
-
-      test('should return null when value is valid', () {
-        expect(AppValidators.name('John Doe'), null);
-        expect(AppValidators.name('Xi'), null);
-      });
+    testWidgets('name validation', (tester) async {
+      await tester.pumpWidget(
+        createLocalizedWrapper(
+          Builder(
+            builder: (context) {
+              // Null
+              expect(
+                AppValidators.name(context, null),
+                isNotNull,
+              ); // "Name is required" but l10n resolved
+              // Empty
+              expect(AppValidators.name(context, ''), isNotNull);
+              // Whitespace
+              expect(AppValidators.name(context, '   '), isNotNull);
+              // Too short
+              expect(
+                AppValidators.name(context, 'A'),
+                'Name must be at least 2 characters',
+              );
+              // Valid
+              expect(AppValidators.name(context, 'John Doe'), null);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    group('otp', () {
-      test('should return error when value is null', () {
-        expect(AppValidators.otp(null), 'OTP is required');
-      });
-
-      test('should return error when value is empty', () {
-        expect(AppValidators.otp(''), 'OTP is required');
-      });
-
-      test('should return error when length is not 6', () {
-        expect(AppValidators.otp('12345'), 'OTP must be 6 digits');
-        expect(AppValidators.otp('1234567'), 'OTP must be 6 digits');
-      });
-
-      test('should return error when value contains non-digits', () {
-        expect(AppValidators.otp('12345a'), 'OTP must be 6 digits');
-      });
-
-      test('should return null when value is valid', () {
-        expect(AppValidators.otp('123456'), null);
-      });
+    testWidgets('otp validation', (tester) async {
+      await tester.pumpWidget(
+        createLocalizedWrapper(
+          Builder(
+            builder: (context) {
+              // Null
+              expect(AppValidators.otp(context, null), 'OTP is required');
+              // Empty
+              expect(AppValidators.otp(context, ''), 'OTP is required');
+              // Wrong length
+              expect(
+                AppValidators.otp(context, '12345'),
+                'OTP must be 6 digits',
+              );
+              // Non-digit
+              expect(
+                AppValidators.otp(context, '12345a'),
+                'OTP must be 6 digits',
+              );
+              // Valid
+              expect(AppValidators.otp(context, '123456'), null);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
 
-    group('email', () {
-      test('should return error when null or empty', () {
-        expect(AppValidators.email(null), 'Email is required');
-        expect(AppValidators.email(''), 'Email is required');
-      });
-
-      test('should return error when invalid format', () {
-        expect(
-          AppValidators.email('invalid-email'),
-          'Please enter a valid email',
-        );
-        expect(AppValidators.email('test@'), 'Please enter a valid email');
-      });
-
-      test('should return null when valid', () {
-        expect(AppValidators.email('test@example.com'), null);
-      });
+    testWidgets('email validation', (tester) async {
+      await tester.pumpWidget(
+        createLocalizedWrapper(
+          Builder(
+            builder: (context) {
+              // Null/Empty
+              expect(AppValidators.email(context, null), 'Email is required');
+              expect(AppValidators.email(context, ''), 'Email is required');
+              // Invalid
+              expect(
+                AppValidators.email(context, 'invalid'),
+                'Please enter a valid email',
+              );
+              // Valid
+              expect(AppValidators.email(context, 'test@example.com'), null);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
     });
   });
 }

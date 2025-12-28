@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/l10n/app_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../gen/assets.gen.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/bubble_background.dart';
+import '../../../settings/presentation/widgets/language_selector.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -89,8 +91,8 @@ class _LoginPageState extends State<LoginPage> {
                 // Check verification status
                 if (state.user.isEmailVerified) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Login Successful! Welcome back.'),
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)!.loginSuccess),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -99,8 +101,10 @@ class _LoginPageState extends State<LoginPage> {
                   _handleRememberMe();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please verify your email to continue.'),
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context)!.verifyEmailToContinue,
+                      ),
                       backgroundColor: Colors.orangeAccent,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -121,6 +125,7 @@ class _LoginPageState extends State<LoginPage> {
               }
             },
             builder: (context, state) {
+              final l10n = AppLocalizations.of(context)!;
               return LayoutBuilder(
                 builder: (context, constraints) {
                   return Center(
@@ -151,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Column(
                                   children: [
                                     Text(
-                                      'Welcome Back',
+                                      l10n.loginTitle,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold,
@@ -162,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Sign in to continue',
+                                      l10n.signInToContinue,
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
                                         color: Colors.white70,
@@ -177,19 +182,21 @@ class _LoginPageState extends State<LoginPage> {
                               // Email Input
                               _buildTextField(
                                 controller: _emailController,
-                                label: 'Email',
+                                label: l10n.email,
                                 icon: Icons.alternate_email_rounded,
-                                validator: AppValidators.email,
+                                validator: (value) =>
+                                    AppValidators.email(context, value),
                               ),
                               const SizedBox(height: 20),
 
                               // Password Input
                               _buildTextField(
                                 controller: _passwordController,
-                                label: 'Password',
+                                label: l10n.password,
                                 icon: Icons.lock_outline_rounded,
                                 isPassword: true,
-                                validator: AppValidators.password,
+                                validator: (value) =>
+                                    AppValidators.password(context, value),
                               ),
 
                               Align(
@@ -199,7 +206,7 @@ class _LoginPageState extends State<LoginPage> {
                                     context.push(AppRoutes.forgotPassword);
                                   },
                                   child: Text(
-                                    'Forgot Password?',
+                                    l10n.forgotPassword,
                                     style: GoogleFonts.inter(
                                       color: AppColors.splashNeonCyan,
                                       fontWeight: FontWeight.w600,
@@ -257,7 +264,7 @@ class _LoginPageState extends State<LoginPage> {
                                             color: Colors.white,
                                           )
                                         : Text(
-                                            'SIGN IN',
+                                            l10n.signIn,
                                             style: GoogleFonts.inter(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -287,7 +294,7 @@ class _LoginPageState extends State<LoginPage> {
                                     },
                                   ),
                                   Text(
-                                    'Remember Me',
+                                    l10n.rememberMe,
                                     style: GoogleFonts.inter(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -314,7 +321,7 @@ class _LoginPageState extends State<LoginPage> {
                                       horizontal: 16,
                                     ),
                                     child: Text(
-                                      'Or continue with',
+                                      l10n.orContinueWith,
                                       style: GoogleFonts.inter(
                                         color: Colors.white38,
                                         fontSize: 12,
@@ -341,7 +348,7 @@ class _LoginPageState extends State<LoginPage> {
                                 children: [
                                   _buildSocialButton(
                                     icon: Icons.g_mobiledata,
-                                    label: 'Google',
+                                    label: l10n.google,
                                     onTap: () {
                                       context.read<AuthBloc>().add(
                                         AuthGoogleLoginRequested(),
@@ -350,13 +357,13 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   _buildSocialButton(
                                     icon: Icons.apple,
-                                    label: 'Apple',
+                                    label: l10n.apple,
                                     onTap: () {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Sắp ra mắt'),
+                                        SnackBar(
+                                          content: Text(l10n.comingSoon),
                                           backgroundColor:
                                               AppColors.splashNeonPurple,
                                           behavior: SnackBarBehavior.floating,
@@ -375,7 +382,7 @@ class _LoginPageState extends State<LoginPage> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
-                                    "Don't have an account? ",
+                                    l10n.dontHaveAccount,
                                     style: GoogleFonts.inter(
                                       color: Colors.white70,
                                     ),
@@ -386,7 +393,7 @@ class _LoginPageState extends State<LoginPage> {
                                       context.go(AppRoutes.register);
                                     },
                                     child: Text(
-                                      'Sign Up',
+                                      l10n.signUp,
                                       style: GoogleFonts.inter(
                                         color: AppColors.splashNeonCyan,
                                         fontWeight: FontWeight.bold,
@@ -404,6 +411,16 @@ class _LoginPageState extends State<LoginPage> {
                 },
               );
             },
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: LanguageSelector(),
+              ),
+            ),
           ),
         ],
       ),

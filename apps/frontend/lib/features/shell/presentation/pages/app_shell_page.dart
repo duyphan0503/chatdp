@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/l10n/app_localizations.dart';
 
 class AppShellPage extends StatelessWidget {
   const AppShellPage({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  static const _chatLabel = 'Chat';
-  static const _settingsLabel = 'Settings';
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: _chatLabel),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: _settingsLabel,
+            icon: const Icon(Icons.chat),
+            label: l10n.navChat,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.settings),
+            label: l10n.navSettings,
           ),
         ],
         onTap: (index) {

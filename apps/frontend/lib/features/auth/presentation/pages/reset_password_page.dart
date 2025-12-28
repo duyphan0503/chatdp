@@ -205,7 +205,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ),
                             ),
-                            validator: AppValidators.password,
+                            validator: (v) =>
+                                AppValidators.password(context, v),
                           ),
                           const SizedBox(height: 16),
 
@@ -265,6 +266,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               ),
                             ),
                             validator: (v) => AppValidators.confirmPassword(
+                              context,
                               v,
                               _passwordController.text,
                             ),
