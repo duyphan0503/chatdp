@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import '../entities/conversation.dart';
 import '../entities/message.dart';
@@ -12,7 +11,7 @@ import '../../../../core/error/failures.dart';
 abstract class IChatRepository {
   /// Get list of conversations for the current user
   ///
-  /// Returns `Either<Failure, List<Conversation>>`
+  /// Returns Either<Failure, List\<Conversation\>>
   /// - Left: Failure if operation failed
   /// - Right: List of conversations if successful
   Future<Either<Failure, List<Conversation>>> getConversations();
@@ -23,7 +22,7 @@ abstract class IChatRepository {
   /// [cursor] - Cursor for pagination (message ID or timestamp)
   /// [limit] - Number of messages to fetch (default: 20)
   ///
-  /// Returns `Either<Failure, List<Message>>`
+  /// Returns Either<Failure, List\<Message\>>
   Future<Either<Failure, List<Message>>> getMessages({
     required String conversationId,
     String? cursor,
@@ -35,21 +34,15 @@ abstract class IChatRepository {
   /// [conversationId] - ID of the conversation
   /// [content] - Message content
   ///
-  /// Returns `Either<Failure, Message>` - The sent message
+  /// Returns Either<Failure, Message\> - The sent message
   Future<Either<Failure, Message>> sendMessage({
     required String conversationId,
     required String content,
   });
 
-  /// Send an image message
-  Future<Either<Failure, Message>> sendImage({
-    required String conversationId,
-    required File file,
-  });
-
   /// Listen to new messages in real-time via WebSocket
   ///
-  /// Returns a `Stream<Either<Failure, Message>>`
+  /// Returns a Stream of Either<Failure, Message>
   /// - Emits Left(Failure) on WebSocket errors
   /// - Emits Right(Message) when new message arrives
   Stream<Either<Failure, Message>> listenToMessages();
@@ -72,32 +65,7 @@ abstract class IChatRepository {
 
   /// Get WebSocket connection state stream
   Stream<WebSocketState> get connectionState;
-
-  /// Emit typing event to a conversation
-  ///
-  /// [conversationId] - ID of the conversation
-  Future<Either<Failure, void>> emitTyping(String conversationId);
-
-  /// Listen to typing events in real-time via WebSocket
-  ///
-  /// Returns a Stream of typing events with userId and userName
-  Stream<TypingEvent> listenToTyping();
 }
 
 /// WebSocket connection state
 enum WebSocketState { disconnected, connecting, connected, error }
-
-/// Typing event from WebSocket
-class TypingEvent {
-  final String conversationId;
-  final String userId;
-  final String userName;
-  final bool isTyping;
-
-  TypingEvent({
-    required this.conversationId,
-    required this.userId,
-    required this.userName,
-    required this.isTyping,
-  });
-}

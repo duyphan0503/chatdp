@@ -19,7 +19,7 @@ class SendMessageUseCase {
   /// [conversationId] - ID of the conversation
   /// [content] - Message content (must not be empty)
   ///
-  /// Returns `Either<Failure, Message>` - The sent message
+  /// Returns Either<Failure, Message> - The sent message
   Future<Either<Failure, Message>> call({
     required String conversationId,
     required String content,

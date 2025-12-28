@@ -55,7 +55,7 @@ extension ChatDetailEventPatterns on ChatDetailEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _LoadMessages value)?  loadMessages,TResult Function( _LoadMoreMessages value)?  loadMoreMessages,TResult Function( _SendMessage value)?  sendMessage,TResult Function( _MessageReceived value)?  messageReceived,TResult Function( _JoinConversation value)?  joinConversation,TResult Function( _LeaveConversation value)?  leaveConversation,TResult Function( _SendImage value)?  sendImage,TResult Function( _StartTyping value)?  startTyping,TResult Function( _StopTyping value)?  stopTyping,TResult Function( _UserTypingReceived value)?  userTypingReceived,TResult Function( _UserStoppedTyping value)?  userStoppedTyping,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _LoadMessages value)?  loadMessages,TResult Function( _LoadMoreMessages value)?  loadMoreMessages,TResult Function( _SendMessage value)?  sendMessage,TResult Function( _MessageReceived value)?  messageReceived,TResult Function( _JoinConversation value)?  joinConversation,TResult Function( _LeaveConversation value)?  leaveConversation,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _LoadMessages() when loadMessages != null:
@@ -64,12 +64,7 @@ return loadMoreMessages(_that);case _SendMessage() when sendMessage != null:
 return sendMessage(_that);case _MessageReceived() when messageReceived != null:
 return messageReceived(_that);case _JoinConversation() when joinConversation != null:
 return joinConversation(_that);case _LeaveConversation() when leaveConversation != null:
-return leaveConversation(_that);case _SendImage() when sendImage != null:
-return sendImage(_that);case _StartTyping() when startTyping != null:
-return startTyping(_that);case _StopTyping() when stopTyping != null:
-return stopTyping(_that);case _UserTypingReceived() when userTypingReceived != null:
-return userTypingReceived(_that);case _UserStoppedTyping() when userStoppedTyping != null:
-return userStoppedTyping(_that);case _:
+return leaveConversation(_that);case _:
   return orElse();
 
 }
@@ -87,7 +82,7 @@ return userStoppedTyping(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _LoadMessages value)  loadMessages,required TResult Function( _LoadMoreMessages value)  loadMoreMessages,required TResult Function( _SendMessage value)  sendMessage,required TResult Function( _MessageReceived value)  messageReceived,required TResult Function( _JoinConversation value)  joinConversation,required TResult Function( _LeaveConversation value)  leaveConversation,required TResult Function( _SendImage value)  sendImage,required TResult Function( _StartTyping value)  startTyping,required TResult Function( _StopTyping value)  stopTyping,required TResult Function( _UserTypingReceived value)  userTypingReceived,required TResult Function( _UserStoppedTyping value)  userStoppedTyping,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _LoadMessages value)  loadMessages,required TResult Function( _LoadMoreMessages value)  loadMoreMessages,required TResult Function( _SendMessage value)  sendMessage,required TResult Function( _MessageReceived value)  messageReceived,required TResult Function( _JoinConversation value)  joinConversation,required TResult Function( _LeaveConversation value)  leaveConversation,}){
 final _that = this;
 switch (_that) {
 case _LoadMessages():
@@ -96,12 +91,7 @@ return loadMoreMessages(_that);case _SendMessage():
 return sendMessage(_that);case _MessageReceived():
 return messageReceived(_that);case _JoinConversation():
 return joinConversation(_that);case _LeaveConversation():
-return leaveConversation(_that);case _SendImage():
-return sendImage(_that);case _StartTyping():
-return startTyping(_that);case _StopTyping():
-return stopTyping(_that);case _UserTypingReceived():
-return userTypingReceived(_that);case _UserStoppedTyping():
-return userStoppedTyping(_that);case _:
+return leaveConversation(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -118,7 +108,7 @@ return userStoppedTyping(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _LoadMessages value)?  loadMessages,TResult? Function( _LoadMoreMessages value)?  loadMoreMessages,TResult? Function( _SendMessage value)?  sendMessage,TResult? Function( _MessageReceived value)?  messageReceived,TResult? Function( _JoinConversation value)?  joinConversation,TResult? Function( _LeaveConversation value)?  leaveConversation,TResult? Function( _SendImage value)?  sendImage,TResult? Function( _StartTyping value)?  startTyping,TResult? Function( _StopTyping value)?  stopTyping,TResult? Function( _UserTypingReceived value)?  userTypingReceived,TResult? Function( _UserStoppedTyping value)?  userStoppedTyping,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _LoadMessages value)?  loadMessages,TResult? Function( _LoadMoreMessages value)?  loadMoreMessages,TResult? Function( _SendMessage value)?  sendMessage,TResult? Function( _MessageReceived value)?  messageReceived,TResult? Function( _JoinConversation value)?  joinConversation,TResult? Function( _LeaveConversation value)?  leaveConversation,}){
 final _that = this;
 switch (_that) {
 case _LoadMessages() when loadMessages != null:
@@ -127,12 +117,7 @@ return loadMoreMessages(_that);case _SendMessage() when sendMessage != null:
 return sendMessage(_that);case _MessageReceived() when messageReceived != null:
 return messageReceived(_that);case _JoinConversation() when joinConversation != null:
 return joinConversation(_that);case _LeaveConversation() when leaveConversation != null:
-return leaveConversation(_that);case _SendImage() when sendImage != null:
-return sendImage(_that);case _StartTyping() when startTyping != null:
-return startTyping(_that);case _StopTyping() when stopTyping != null:
-return stopTyping(_that);case _UserTypingReceived() when userTypingReceived != null:
-return userTypingReceived(_that);case _UserStoppedTyping() when userStoppedTyping != null:
-return userStoppedTyping(_that);case _:
+return leaveConversation(_that);case _:
   return null;
 
 }
@@ -149,7 +134,7 @@ return userStoppedTyping(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String conversationId)?  loadMessages,TResult Function()?  loadMoreMessages,TResult Function( String content)?  sendMessage,TResult Function( Message message)?  messageReceived,TResult Function()?  joinConversation,TResult Function()?  leaveConversation,TResult Function( File image)?  sendImage,TResult Function()?  startTyping,TResult Function()?  stopTyping,TResult Function( String userId,  String userName)?  userTypingReceived,TResult Function( String userId)?  userStoppedTyping,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String conversationId)?  loadMessages,TResult Function()?  loadMoreMessages,TResult Function( String content)?  sendMessage,TResult Function( Message message)?  messageReceived,TResult Function()?  joinConversation,TResult Function()?  leaveConversation,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LoadMessages() when loadMessages != null:
 return loadMessages(_that.conversationId);case _LoadMoreMessages() when loadMoreMessages != null:
@@ -157,12 +142,7 @@ return loadMoreMessages();case _SendMessage() when sendMessage != null:
 return sendMessage(_that.content);case _MessageReceived() when messageReceived != null:
 return messageReceived(_that.message);case _JoinConversation() when joinConversation != null:
 return joinConversation();case _LeaveConversation() when leaveConversation != null:
-return leaveConversation();case _SendImage() when sendImage != null:
-return sendImage(_that.image);case _StartTyping() when startTyping != null:
-return startTyping();case _StopTyping() when stopTyping != null:
-return stopTyping();case _UserTypingReceived() when userTypingReceived != null:
-return userTypingReceived(_that.userId,_that.userName);case _UserStoppedTyping() when userStoppedTyping != null:
-return userStoppedTyping(_that.userId);case _:
+return leaveConversation();case _:
   return orElse();
 
 }
@@ -180,7 +160,7 @@ return userStoppedTyping(_that.userId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String conversationId)  loadMessages,required TResult Function()  loadMoreMessages,required TResult Function( String content)  sendMessage,required TResult Function( Message message)  messageReceived,required TResult Function()  joinConversation,required TResult Function()  leaveConversation,required TResult Function( File image)  sendImage,required TResult Function()  startTyping,required TResult Function()  stopTyping,required TResult Function( String userId,  String userName)  userTypingReceived,required TResult Function( String userId)  userStoppedTyping,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String conversationId)  loadMessages,required TResult Function()  loadMoreMessages,required TResult Function( String content)  sendMessage,required TResult Function( Message message)  messageReceived,required TResult Function()  joinConversation,required TResult Function()  leaveConversation,}) {final _that = this;
 switch (_that) {
 case _LoadMessages():
 return loadMessages(_that.conversationId);case _LoadMoreMessages():
@@ -188,12 +168,7 @@ return loadMoreMessages();case _SendMessage():
 return sendMessage(_that.content);case _MessageReceived():
 return messageReceived(_that.message);case _JoinConversation():
 return joinConversation();case _LeaveConversation():
-return leaveConversation();case _SendImage():
-return sendImage(_that.image);case _StartTyping():
-return startTyping();case _StopTyping():
-return stopTyping();case _UserTypingReceived():
-return userTypingReceived(_that.userId,_that.userName);case _UserStoppedTyping():
-return userStoppedTyping(_that.userId);case _:
+return leaveConversation();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,7 +185,7 @@ return userStoppedTyping(_that.userId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String conversationId)?  loadMessages,TResult? Function()?  loadMoreMessages,TResult? Function( String content)?  sendMessage,TResult? Function( Message message)?  messageReceived,TResult? Function()?  joinConversation,TResult? Function()?  leaveConversation,TResult? Function( File image)?  sendImage,TResult? Function()?  startTyping,TResult? Function()?  stopTyping,TResult? Function( String userId,  String userName)?  userTypingReceived,TResult? Function( String userId)?  userStoppedTyping,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String conversationId)?  loadMessages,TResult? Function()?  loadMoreMessages,TResult? Function( String content)?  sendMessage,TResult? Function( Message message)?  messageReceived,TResult? Function()?  joinConversation,TResult? Function()?  leaveConversation,}) {final _that = this;
 switch (_that) {
 case _LoadMessages() when loadMessages != null:
 return loadMessages(_that.conversationId);case _LoadMoreMessages() when loadMoreMessages != null:
@@ -218,12 +193,7 @@ return loadMoreMessages();case _SendMessage() when sendMessage != null:
 return sendMessage(_that.content);case _MessageReceived() when messageReceived != null:
 return messageReceived(_that.message);case _JoinConversation() when joinConversation != null:
 return joinConversation();case _LeaveConversation() when leaveConversation != null:
-return leaveConversation();case _SendImage() when sendImage != null:
-return sendImage(_that.image);case _StartTyping() when startTyping != null:
-return startTyping();case _StopTyping() when stopTyping != null:
-return stopTyping();case _UserTypingReceived() when userTypingReceived != null:
-return userTypingReceived(_that.userId,_that.userName);case _UserStoppedTyping() when userStoppedTyping != null:
-return userStoppedTyping(_that.userId);case _:
+return leaveConversation();case _:
   return null;
 
 }
@@ -533,269 +503,5 @@ String toString() {
 
 
 
-
-/// @nodoc
-
-
-class _SendImage implements ChatDetailEvent {
-  const _SendImage({required this.image});
-  
-
- final  File image;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$SendImageCopyWith<_SendImage> get copyWith => __$SendImageCopyWithImpl<_SendImage>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SendImage&&(identical(other.image, image) || other.image == image));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,image);
-
-@override
-String toString() {
-  return 'ChatDetailEvent.sendImage(image: $image)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$SendImageCopyWith<$Res> implements $ChatDetailEventCopyWith<$Res> {
-  factory _$SendImageCopyWith(_SendImage value, $Res Function(_SendImage) _then) = __$SendImageCopyWithImpl;
-@useResult
-$Res call({
- File image
-});
-
-
-
-
-}
-/// @nodoc
-class __$SendImageCopyWithImpl<$Res>
-    implements _$SendImageCopyWith<$Res> {
-  __$SendImageCopyWithImpl(this._self, this._then);
-
-  final _SendImage _self;
-  final $Res Function(_SendImage) _then;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? image = null,}) {
-  return _then(_SendImage(
-image: null == image ? _self.image : image // ignore: cast_nullable_to_non_nullable
-as File,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _StartTyping implements ChatDetailEvent {
-  const _StartTyping();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StartTyping);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ChatDetailEvent.startTyping()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
-class _StopTyping implements ChatDetailEvent {
-  const _StopTyping();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StopTyping);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'ChatDetailEvent.stopTyping()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
-class _UserTypingReceived implements ChatDetailEvent {
-  const _UserTypingReceived({required this.userId, required this.userName});
-  
-
- final  String userId;
- final  String userName;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$UserTypingReceivedCopyWith<_UserTypingReceived> get copyWith => __$UserTypingReceivedCopyWithImpl<_UserTypingReceived>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserTypingReceived&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.userName, userName) || other.userName == userName));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,userId,userName);
-
-@override
-String toString() {
-  return 'ChatDetailEvent.userTypingReceived(userId: $userId, userName: $userName)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$UserTypingReceivedCopyWith<$Res> implements $ChatDetailEventCopyWith<$Res> {
-  factory _$UserTypingReceivedCopyWith(_UserTypingReceived value, $Res Function(_UserTypingReceived) _then) = __$UserTypingReceivedCopyWithImpl;
-@useResult
-$Res call({
- String userId, String userName
-});
-
-
-
-
-}
-/// @nodoc
-class __$UserTypingReceivedCopyWithImpl<$Res>
-    implements _$UserTypingReceivedCopyWith<$Res> {
-  __$UserTypingReceivedCopyWithImpl(this._self, this._then);
-
-  final _UserTypingReceived _self;
-  final $Res Function(_UserTypingReceived) _then;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? userName = null,}) {
-  return _then(_UserTypingReceived(
-userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,userName: null == userName ? _self.userName : userName // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _UserStoppedTyping implements ChatDetailEvent {
-  const _UserStoppedTyping({required this.userId});
-  
-
- final  String userId;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$UserStoppedTypingCopyWith<_UserStoppedTyping> get copyWith => __$UserStoppedTypingCopyWithImpl<_UserStoppedTyping>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserStoppedTyping&&(identical(other.userId, userId) || other.userId == userId));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,userId);
-
-@override
-String toString() {
-  return 'ChatDetailEvent.userStoppedTyping(userId: $userId)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$UserStoppedTypingCopyWith<$Res> implements $ChatDetailEventCopyWith<$Res> {
-  factory _$UserStoppedTypingCopyWith(_UserStoppedTyping value, $Res Function(_UserStoppedTyping) _then) = __$UserStoppedTypingCopyWithImpl;
-@useResult
-$Res call({
- String userId
-});
-
-
-
-
-}
-/// @nodoc
-class __$UserStoppedTypingCopyWithImpl<$Res>
-    implements _$UserStoppedTypingCopyWith<$Res> {
-  __$UserStoppedTypingCopyWithImpl(this._self, this._then);
-
-  final _UserStoppedTyping _self;
-  final $Res Function(_UserStoppedTyping) _then;
-
-/// Create a copy of ChatDetailEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? userId = null,}) {
-  return _then(_UserStoppedTyping(
-userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
 
 // dart format on

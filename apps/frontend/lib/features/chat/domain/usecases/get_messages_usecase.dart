@@ -20,7 +20,7 @@ class GetMessagesUseCase {
   /// [cursor] - Cursor for pagination (optional, for loading more)
   /// [limit] - Number of messages to fetch
   ///
-  /// Returns `Either<Failure, List<Message>>`
+  /// Returns Either<Failure, List<Message>>
   Future<Either<Failure, List<Message>>> call({
     required String conversationId,
     String? cursor,

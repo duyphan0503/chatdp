@@ -23,7 +23,6 @@ dependencies:
   dio: ^5.7.0
   web_socket_channel: ^3.0.1
   fpdart: ^1.2.0
-  http_parser: ^4.0.0
 
   # DI
   get_it: ^9.2.0
@@ -43,17 +42,12 @@ dependencies:
   # Storage
   flutter_secure_storage: ^10.0.0
   shared_preferences: ^2.3.5
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
   pinput: ^6.0.1
   flutter_dotenv: ^6.0.0
   bloc_concurrency: ^0.3.0
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  emoji_picker_flutter: ^4.4.0
-  image_picker: ^1.2.1
-  mime: ^2.0.0
 
 dev_dependencies:
   flutter_test:

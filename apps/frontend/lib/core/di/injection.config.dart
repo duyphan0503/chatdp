@@ -33,7 +33,6 @@ import '../../features/chat/domain/usecases/get_conversations_usecase.dart'
 import '../../features/chat/domain/usecases/get_messages_usecase.dart' as _i325;
 import '../../features/chat/domain/usecases/listen_to_messages_usecase.dart'
     as _i952;
-import '../../features/chat/domain/usecases/send_image_usecase.dart' as _i253;
 import '../../features/chat/domain/usecases/send_message_usecase.dart' as _i795;
 import '../../features/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart'
     as _i822;
@@ -74,7 +73,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i527.IChatWebSocketDataSource>(
       () => _i527.ChatWebSocketDataSource(gh<_i558.FlutterSecureStorage>()),
-      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i674.SettingsRepository>(
       () => _i955.SettingsRepositoryImpl(gh<_i599.SettingsLocalDataSource>()),
@@ -110,7 +108,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i504.ChatRepositoryImpl(
         gh<_i980.IChatRemoteDataSource>(),
         gh<_i527.IChatWebSocketDataSource>(),
-        gh<_i558.FlutterSecureStorage>(),
       ),
     );
     gh.factory<_i194.GetConversationsUseCase>(
@@ -122,9 +119,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i952.ListenToMessagesUseCase>(
       () => _i952.ListenToMessagesUseCase(gh<_i420.IChatRepository>()),
     );
-    gh.factory<_i253.SendImageUseCase>(
-      () => _i253.SendImageUseCase(gh<_i420.IChatRepository>()),
-    );
     gh.factory<_i795.SendMessageUseCase>(
       () => _i795.SendMessageUseCase(gh<_i420.IChatRepository>()),
     );
@@ -132,7 +126,6 @@ extension GetItInjectableX on _i174.GetIt {
       (conversationId, _) => _i822.ChatDetailBloc(
         gh<_i325.GetMessagesUseCase>(),
         gh<_i795.SendMessageUseCase>(),
-        gh<_i253.SendImageUseCase>(),
         gh<_i952.ListenToMessagesUseCase>(),
         gh<_i420.IChatRepository>(),
         conversationId,

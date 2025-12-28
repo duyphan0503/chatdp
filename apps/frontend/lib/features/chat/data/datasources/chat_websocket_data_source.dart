@@ -5,7 +5,6 @@ import 'package:injectable/injectable.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import '../models/message_model.dart';
-import '../../domain/repositories/chat_repository.dart';
 import '../../../../core/config/env_config.dart';
 
 /// WebSocket data source for real-time chat operations.
@@ -28,7 +27,6 @@ abstract class IChatWebSocketDataSource {
   Future<void> sendMessage({
     required String conversationId,
     required String content,
-    String contentType = 'text',
   });
 
   /// Stream of incoming messages
@@ -36,12 +34,6 @@ abstract class IChatWebSocketDataSource {
 
   /// Stream of connection state
   Stream<WebSocketConnectionState> get connectionStateStream;
-
-  /// Emit typing event
-  Future<void> emitTyping(String conversationId);
-
-  /// Stream of typing events
-  Stream<TypingEvent> get typingStream;
 
   /// Dispose resources
   void dispose();
@@ -55,24 +47,16 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
 
   WebSocketChannel? _channel;
   final _messageController = StreamController<MessageModel>.broadcast();
-  final _typingController = StreamController<TypingEvent>.broadcast();
   final _connectionStateController =
       StreamController<WebSocketConnectionState>.broadcast();
 
   StreamSubscription? _channelSubscription;
   bool _isConnected = false;
-  int _reconnectAttempts = 0;
-  static const int _maxReconnectAttempts = 5;
-  static const Duration _initialReconnectDelay = Duration(seconds: 1);
-  Timer? _reconnectTimer;
 
   ChatWebSocketDataSource(this._storage);
 
   @override
   Stream<MessageModel> get messageStream => _messageController.stream;
-
-  @override
-  Stream<TypingEvent> get typingStream => _typingController.stream;
 
   @override
   Stream<WebSocketConnectionState> get connectionStateStream =>
@@ -112,30 +96,12 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
       );
 
       _isConnected = true;
-      _reconnectAttempts = 0; // Reset on successful connection
       _connectionStateController.add(WebSocketConnectionState.connected);
     } catch (e) {
       _connectionStateController.add(WebSocketConnectionState.error);
       _isConnected = false;
-      _scheduleReconnect();
       rethrow;
     }
-  }
-
-  /// Schedule reconnection with exponential backoff
-  void _scheduleReconnect() {
-    if (_reconnectAttempts >= _maxReconnectAttempts) {
-      _connectionStateController.add(WebSocketConnectionState.error);
-      return;
-    }
-
-    _reconnectAttempts++;
-    final delay = _initialReconnectDelay * (1 << (_reconnectAttempts - 1));
-
-    _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(delay, () {
-      connect();
-    });
   }
 
   @override
@@ -173,7 +139,6 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
   Future<void> sendMessage({
     required String conversationId,
     required String content,
-    String contentType = 'text',
   }) async {
     if (!_isConnected) {
       throw Exception('WebSocket not connected');
@@ -182,17 +147,8 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
     _sendEvent('message:new', {
       'conversationId': conversationId,
       'content': content,
-      'contentType': contentType,
+      'contentType': 'text',
     });
-  }
-
-  @override
-  Future<void> emitTyping(String conversationId) async {
-    if (!_isConnected) {
-      throw Exception('WebSocket not connected');
-    }
-
-    _sendEvent('typing', {'conversationId': conversationId});
   }
 
   void _sendEvent(String event, Map<String, dynamic> data) {
@@ -228,18 +184,6 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
           _messageController.add(messageModel);
           break;
 
-        case 'typing':
-          // Typing event received
-          final typingData = data['data'] as Map<String, dynamic>;
-          final typingEvent = TypingEvent(
-            conversationId: typingData['conversationId'] as String,
-            userId: typingData['userId'] as String,
-            userName: typingData['userName'] as String? ?? 'Unknown',
-            isTyping: typingData['isTyping'] as bool? ?? true,
-          );
-          _typingController.add(typingEvent);
-          break;
-
         case 'conversation:joined':
         case 'conversation:left':
           // Conversation room events (can be handled if needed)
@@ -264,23 +208,18 @@ class ChatWebSocketDataSource implements IChatWebSocketDataSource {
   void _handleError(dynamic error) {
     _connectionStateController.add(WebSocketConnectionState.error);
     _isConnected = false;
-    _scheduleReconnect(); // Auto-reconnect on error
   }
 
   void _handleDone() {
     _connectionStateController.add(WebSocketConnectionState.disconnected);
     _isConnected = false;
-    _scheduleReconnect(); // Auto-reconnect on disconnect
   }
 
   @override
-  @disposeMethod
   void dispose() {
-    _reconnectTimer?.cancel();
     _channelSubscription?.cancel();
     _channel?.sink.close();
     _messageController.close();
-    _typingController.close();
     _connectionStateController.close();
   }
 }
