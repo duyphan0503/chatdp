@@ -14,6 +14,22 @@ try {
     fs.copyFileSync(envExample, envPath);
   }
 
+  // Load .env if it exists (for CI or local dev)
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split('\n').forEach((line) => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim().replace(/^['"]|['"]$/g, '');
+        // Only set if not already set (preserve system env vars)
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    });
+  }
+
   // Load .env.test.local if it exists (for local overrides)
   const localEnvPath = path.join(rootDir, '.env.test.local');
   if (fs.existsSync(localEnvPath)) {
@@ -23,9 +39,8 @@ try {
       if (match) {
         const key = match[1].trim();
         const value = match[2].trim().replace(/^['"]|['"]$/g, '');
-        if (!process.env[key]) {
-          process.env[key] = value;
-        }
+        // Force override for local test config
+        process.env[key] = value;
       }
     });
   }
