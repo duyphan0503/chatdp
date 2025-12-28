@@ -6,7 +6,9 @@ sealed class AuthEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class AuthCheckRequested extends AuthEvent {}
+class AuthCheckRequested extends AuthEvent {
+  const AuthCheckRequested();
+}
 
 class AuthLoginRequested extends AuthEvent {
   final String email;
@@ -37,7 +39,9 @@ class AuthVerifyOtpRequested extends AuthEvent {
   List<Object?> get props => [email, otp];
 }
 
-class AuthLogoutRequested extends AuthEvent {}
+class AuthLogoutRequested extends AuthEvent {
+  const AuthLogoutRequested();
+}
 
 class AuthResendOtpRequested extends AuthEvent {
   final String email;
@@ -66,4 +70,6 @@ class AuthResetPasswordRequested extends AuthEvent {
   List<Object?> get props => [email, otp, newPassword];
 }
 
-class AuthGoogleLoginRequested extends AuthEvent {}
+class AuthGoogleLoginRequested extends AuthEvent {
+  const AuthGoogleLoginRequested();
+}
