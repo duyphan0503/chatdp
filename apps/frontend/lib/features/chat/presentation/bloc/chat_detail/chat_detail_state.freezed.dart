@@ -22,7 +22,9 @@ mixin _$ChatDetailState {
  bool get hasMore;/// Cursor for pagination
  String? get cursor;/// Error message if any
  String? get errorMessage;/// Sending state
- bool get isSending;
+ bool get isSending;/// List of users currently typing (user IDs)
+ List<String> get typingUserIds;/// Map of user ID to display name for typing users
+ Map<String, String> get typingUsers;
 /// Create a copy of ChatDetailState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +35,16 @@ $ChatDetailStateCopyWith<ChatDetailState> get copyWith => _$ChatDetailStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatDetailState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.isSending, isSending) || other.isSending == isSending));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatDetailState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.isSending, isSending) || other.isSending == isSending)&&const DeepCollectionEquality().equals(other.typingUserIds, typingUserIds)&&const DeepCollectionEquality().equals(other.typingUsers, typingUsers));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,const DeepCollectionEquality().hash(messages),isLoading,isLoadingMore,hasMore,cursor,errorMessage,isSending);
+int get hashCode => Object.hash(runtimeType,conversationId,const DeepCollectionEquality().hash(messages),isLoading,isLoadingMore,hasMore,cursor,errorMessage,isSending,const DeepCollectionEquality().hash(typingUserIds),const DeepCollectionEquality().hash(typingUsers));
 
 @override
 String toString() {
-  return 'ChatDetailState(conversationId: $conversationId, messages: $messages, isLoading: $isLoading, isLoadingMore: $isLoadingMore, hasMore: $hasMore, cursor: $cursor, errorMessage: $errorMessage, isSending: $isSending)';
+  return 'ChatDetailState(conversationId: $conversationId, messages: $messages, isLoading: $isLoading, isLoadingMore: $isLoadingMore, hasMore: $hasMore, cursor: $cursor, errorMessage: $errorMessage, isSending: $isSending, typingUserIds: $typingUserIds, typingUsers: $typingUsers)';
 }
 
 
@@ -53,7 +55,7 @@ abstract mixin class $ChatDetailStateCopyWith<$Res>  {
   factory $ChatDetailStateCopyWith(ChatDetailState value, $Res Function(ChatDetailState) _then) = _$ChatDetailStateCopyWithImpl;
 @useResult
 $Res call({
- String conversationId, List<Message> messages, bool isLoading, bool isLoadingMore, bool hasMore, String? cursor, String? errorMessage, bool isSending
+ String conversationId, List<Message> messages, bool isLoading, bool isLoadingMore, bool hasMore, String? cursor, String? errorMessage, bool isSending, List<String> typingUserIds, Map<String, String> typingUsers
 });
 
 
@@ -70,7 +72,7 @@ class _$ChatDetailStateCopyWithImpl<$Res>
 
 /// Create a copy of ChatDetailState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? messages = null,Object? isLoading = null,Object? isLoadingMore = null,Object? hasMore = null,Object? cursor = freezed,Object? errorMessage = freezed,Object? isSending = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? messages = null,Object? isLoading = null,Object? isLoadingMore = null,Object? hasMore = null,Object? cursor = freezed,Object? errorMessage = freezed,Object? isSending = null,Object? typingUserIds = null,Object? typingUsers = null,}) {
   return _then(_self.copyWith(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
@@ -80,7 +82,9 @@ as bool,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nulla
 as bool,cursor: freezed == cursor ? _self.cursor : cursor // ignore: cast_nullable_to_non_nullable
 as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,isSending: null == isSending ? _self.isSending : isSending // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,typingUserIds: null == typingUserIds ? _self.typingUserIds : typingUserIds // ignore: cast_nullable_to_non_nullable
+as List<String>,typingUsers: null == typingUsers ? _self.typingUsers : typingUsers // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 
@@ -165,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending,  List<String> typingUserIds,  Map<String, String> typingUsers)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatDetailState() when $default != null:
-return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending);case _:
+return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending,_that.typingUserIds,_that.typingUsers);case _:
   return orElse();
 
 }
@@ -186,10 +190,10 @@ return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoad
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending,  List<String> typingUserIds,  Map<String, String> typingUsers)  $default,) {final _that = this;
 switch (_that) {
 case _ChatDetailState():
-return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending);case _:
+return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending,_that.typingUserIds,_that.typingUsers);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +210,10 @@ return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoad
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  List<Message> messages,  bool isLoading,  bool isLoadingMore,  bool hasMore,  String? cursor,  String? errorMessage,  bool isSending,  List<String> typingUserIds,  Map<String, String> typingUsers)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatDetailState() when $default != null:
-return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending);case _:
+return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoadingMore,_that.hasMore,_that.cursor,_that.errorMessage,_that.isSending,_that.typingUserIds,_that.typingUsers);case _:
   return null;
 
 }
@@ -221,7 +225,7 @@ return $default(_that.conversationId,_that.messages,_that.isLoading,_that.isLoad
 
 
 class _ChatDetailState implements ChatDetailState {
-  const _ChatDetailState({required this.conversationId, final  List<Message> messages = const [], this.isLoading = false, this.isLoadingMore = false, this.hasMore = true, this.cursor, this.errorMessage, this.isSending = false}): _messages = messages;
+  const _ChatDetailState({required this.conversationId, final  List<Message> messages = const [], this.isLoading = false, this.isLoadingMore = false, this.hasMore = true, this.cursor, this.errorMessage, this.isSending = false, final  List<String> typingUserIds = const [], final  Map<String, String> typingUsers = const {}}): _messages = messages,_typingUserIds = typingUserIds,_typingUsers = typingUsers;
   
 
 /// Current conversation ID
@@ -247,6 +251,24 @@ class _ChatDetailState implements ChatDetailState {
 @override final  String? errorMessage;
 /// Sending state
 @override@JsonKey() final  bool isSending;
+/// List of users currently typing (user IDs)
+ final  List<String> _typingUserIds;
+/// List of users currently typing (user IDs)
+@override@JsonKey() List<String> get typingUserIds {
+  if (_typingUserIds is EqualUnmodifiableListView) return _typingUserIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_typingUserIds);
+}
+
+/// Map of user ID to display name for typing users
+ final  Map<String, String> _typingUsers;
+/// Map of user ID to display name for typing users
+@override@JsonKey() Map<String, String> get typingUsers {
+  if (_typingUsers is EqualUnmodifiableMapView) return _typingUsers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_typingUsers);
+}
+
 
 /// Create a copy of ChatDetailState
 /// with the given fields replaced by the non-null parameter values.
@@ -258,16 +280,16 @@ _$ChatDetailStateCopyWith<_ChatDetailState> get copyWith => __$ChatDetailStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatDetailState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.isSending, isSending) || other.isSending == isSending));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatDetailState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.cursor, cursor) || other.cursor == cursor)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.isSending, isSending) || other.isSending == isSending)&&const DeepCollectionEquality().equals(other._typingUserIds, _typingUserIds)&&const DeepCollectionEquality().equals(other._typingUsers, _typingUsers));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,const DeepCollectionEquality().hash(_messages),isLoading,isLoadingMore,hasMore,cursor,errorMessage,isSending);
+int get hashCode => Object.hash(runtimeType,conversationId,const DeepCollectionEquality().hash(_messages),isLoading,isLoadingMore,hasMore,cursor,errorMessage,isSending,const DeepCollectionEquality().hash(_typingUserIds),const DeepCollectionEquality().hash(_typingUsers));
 
 @override
 String toString() {
-  return 'ChatDetailState(conversationId: $conversationId, messages: $messages, isLoading: $isLoading, isLoadingMore: $isLoadingMore, hasMore: $hasMore, cursor: $cursor, errorMessage: $errorMessage, isSending: $isSending)';
+  return 'ChatDetailState(conversationId: $conversationId, messages: $messages, isLoading: $isLoading, isLoadingMore: $isLoadingMore, hasMore: $hasMore, cursor: $cursor, errorMessage: $errorMessage, isSending: $isSending, typingUserIds: $typingUserIds, typingUsers: $typingUsers)';
 }
 
 
@@ -278,7 +300,7 @@ abstract mixin class _$ChatDetailStateCopyWith<$Res> implements $ChatDetailState
   factory _$ChatDetailStateCopyWith(_ChatDetailState value, $Res Function(_ChatDetailState) _then) = __$ChatDetailStateCopyWithImpl;
 @override @useResult
 $Res call({
- String conversationId, List<Message> messages, bool isLoading, bool isLoadingMore, bool hasMore, String? cursor, String? errorMessage, bool isSending
+ String conversationId, List<Message> messages, bool isLoading, bool isLoadingMore, bool hasMore, String? cursor, String? errorMessage, bool isSending, List<String> typingUserIds, Map<String, String> typingUsers
 });
 
 
@@ -295,7 +317,7 @@ class __$ChatDetailStateCopyWithImpl<$Res>
 
 /// Create a copy of ChatDetailState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? messages = null,Object? isLoading = null,Object? isLoadingMore = null,Object? hasMore = null,Object? cursor = freezed,Object? errorMessage = freezed,Object? isSending = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? messages = null,Object? isLoading = null,Object? isLoadingMore = null,Object? hasMore = null,Object? cursor = freezed,Object? errorMessage = freezed,Object? isSending = null,Object? typingUserIds = null,Object? typingUsers = null,}) {
   return _then(_ChatDetailState(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
@@ -305,7 +327,9 @@ as bool,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nulla
 as bool,cursor: freezed == cursor ? _self.cursor : cursor // ignore: cast_nullable_to_non_nullable
 as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,isSending: null == isSending ? _self.isSending : isSending // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,typingUserIds: null == typingUserIds ? _self._typingUserIds : typingUserIds // ignore: cast_nullable_to_non_nullable
+as List<String>,typingUsers: null == typingUsers ? _self._typingUsers : typingUsers // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 

@@ -31,7 +31,7 @@ class SendImageUseCase {
   ///
   /// [params] - Parameters containing conversation ID and image file
   ///
-  /// Returns `Either<Failure, Message>` - The sent message
+  /// Returns Either<Failure, Message> - The sent message
   Future<Either<Failure, Message>> call(SendImageParams params) {
     // Validate conversation ID
     final trimmedConversationId = params.conversationId.trim();
