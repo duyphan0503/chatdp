@@ -12,7 +12,7 @@ import '../../../../core/error/failures.dart';
 abstract class IChatRepository {
   /// Get list of conversations for the current user
   ///
-  /// Returns Either<Failure, List\<Conversation\>>
+  /// Returns `Either<Failure, List<Conversation>>`
   /// - Left: Failure if operation failed
   /// - Right: List of conversations if successful
   Future<Either<Failure, List<Conversation>>> getConversations();
@@ -23,7 +23,7 @@ abstract class IChatRepository {
   /// [cursor] - Cursor for pagination (message ID or timestamp)
   /// [limit] - Number of messages to fetch (default: 20)
   ///
-  /// Returns Either<Failure, List\<Message\>>
+  /// Returns `Either<Failure, List<Message>>`
   Future<Either<Failure, List<Message>>> getMessages({
     required String conversationId,
     String? cursor,
@@ -35,7 +35,7 @@ abstract class IChatRepository {
   /// [conversationId] - ID of the conversation
   /// [content] - Message content
   ///
-  /// Returns Either<Failure, Message\> - The sent message
+  /// Returns `Either<Failure, Message>` - The sent message
   Future<Either<Failure, Message>> sendMessage({
     required String conversationId,
     required String content,
@@ -49,7 +49,7 @@ abstract class IChatRepository {
 
   /// Listen to new messages in real-time via WebSocket
   ///
-  /// Returns a Stream of Either<Failure, Message>
+  /// Returns a `Stream<Either<Failure, Message>>`
   /// - Emits Left(Failure) on WebSocket errors
   /// - Emits Right(Message) when new message arrives
   Stream<Either<Failure, Message>> listenToMessages();

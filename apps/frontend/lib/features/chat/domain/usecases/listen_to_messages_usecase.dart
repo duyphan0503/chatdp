@@ -16,7 +16,7 @@ class ListenToMessagesUseCase {
 
   /// Execute the use case
   ///
-  /// Returns Stream<Either<Failure, Message>>
+  /// Returns `Stream<Either<Failure, Message>>`
   /// - Emits Left(Failure) on errors
   /// - Emits Right(Message) for each new message
   Stream<Either<Failure, Message>> call() {

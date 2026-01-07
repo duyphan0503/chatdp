@@ -16,7 +16,7 @@ class GetConversationsUseCase {
 
   /// Execute the use case
   ///
-  /// Returns Either<Failure, List<Conversation>>
+  /// Returns `Either<Failure, List<Conversation>>`
   Future<Either<Failure, List<Conversation>>> call() {
     return _repository.getConversations();
   }
