@@ -2,8 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../core/utils/error_localization.dart';
 
 import '../bloc/chat_detail/chat_detail_bloc.dart';
 import '../bloc/chat_detail/chat_detail_event.dart';
@@ -100,31 +98,11 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.title ?? AppLocalizations.of(context)!.chat,
+                    widget.title ?? 'Chat',
                     style: theme.textTheme.titleMedium,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  BlocBuilder<ChatDetailBloc, ChatDetailState>(
-                    builder: (context, state) {
-                      if (state.typingUserIds.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      final typingNames = state.typingUserIds
-                          .map((id) => state.typingUsers[id] ?? 'Someone')
-                          .toList();
-                      final typingText = typingNames.length == 1
-                          ? '${typingNames[0]} is typing...'
-                          : '${typingNames.join(', ')} are typing...';
-                      return Text(
-                        typingText,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      );
-                    },
-                  ),
+                  // TODO: Add online status if available
                 ],
               ),
             ),
@@ -145,56 +123,10 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Show error state if present
-                if (state.errorMessage != null) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: theme.colorScheme.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            ErrorLocalization.getLocalizedMessage(
-                              context,
-                              state.errorMessage!,
-                            ),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.read<ChatDetailBloc>().add(
-                                ChatDetailEvent.loadMessages(
-                                  conversationId: context
-                                      .read<ChatDetailBloc>()
-                                      .state
-                                      .conversationId,
-                                ),
-                              );
-                            },
-                            child: Text(AppLocalizations.of(context)!.retry),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (state.messages.isEmpty &&
-                    !state.isLoading &&
-                    state.errorMessage == null) {
+                if (state.messages.isEmpty && !state.isLoading) {
                   return Center(
                     child: Text(
-                      AppLocalizations.of(context)!.noMessagesYet,
+                      'No messages yet',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -232,16 +164,6 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                 onSend: (content) {
                   context.read<ChatDetailBloc>().add(
                     ChatDetailEvent.sendMessage(content: content),
-                  );
-                },
-                onTyping: () {
-                  context.read<ChatDetailBloc>().add(
-                    const ChatDetailEvent.startTyping(),
-                  );
-                },
-                onAttachmentSelected: (file) {
-                  context.read<ChatDetailBloc>().add(
-                    ChatDetailEvent.sendImage(image: file),
                   );
                 },
               );

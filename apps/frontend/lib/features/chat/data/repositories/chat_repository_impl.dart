@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -19,8 +20,13 @@ import '../models/message_model.dart';
 class ChatRepositoryImpl implements IChatRepository {
   final IChatRemoteDataSource _remoteDataSource;
   final IChatWebSocketDataSource _webSocketDataSource;
+  final FlutterSecureStorage _storage;
 
-  ChatRepositoryImpl(this._remoteDataSource, this._webSocketDataSource);
+  ChatRepositoryImpl(
+    this._remoteDataSource,
+    this._webSocketDataSource,
+    this._storage,
+  );
 
   @override
   Future<Either<Failure, List<Conversation>>> getConversations() async {
@@ -180,15 +186,20 @@ class ChatRepositoryImpl implements IChatRepository {
 
   /// Get current user ID from local storage
   Future<String> _getCurrentUserId() async {
-    final user = await _getCurrentUser();
-    return user['id'] as String? ?? '';
+    return await _storage.read(key: 'userId') ?? '';
   }
 
   /// Get current user info from local storage
   Future<Map<String, dynamic>> _getCurrentUser() async {
-    // TODO: Implement proper user info retrieval from local storage
-    // For now, return mock data
-    return {'id': 'current-user-id', 'displayName': 'You', 'avatarUrl': null};
+    final id = await _storage.read(key: 'userId');
+    final displayName = await _storage.read(key: 'displayName');
+    final avatarUrl = await _storage.read(key: 'avatarUrl');
+
+    return {
+      'id': id ?? '',
+      'displayName': displayName ?? 'You',
+      'avatarUrl': avatarUrl,
+    };
   }
 
   /// Map DioException to domain Failure

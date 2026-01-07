@@ -73,6 +73,7 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i527.IChatWebSocketDataSource>(
       () => _i527.ChatWebSocketDataSource(gh<_i558.FlutterSecureStorage>()),
+      dispose: (i) => i.dispose(),
     );
     gh.lazySingleton<_i674.SettingsRepository>(
       () => _i955.SettingsRepositoryImpl(gh<_i599.SettingsLocalDataSource>()),
@@ -108,6 +109,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i504.ChatRepositoryImpl(
         gh<_i980.IChatRemoteDataSource>(),
         gh<_i527.IChatWebSocketDataSource>(),
+        gh<_i558.FlutterSecureStorage>(),
       ),
     );
     gh.factory<_i194.GetConversationsUseCase>(

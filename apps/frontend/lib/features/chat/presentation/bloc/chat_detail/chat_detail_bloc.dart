@@ -53,12 +53,10 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
             state.copyWith(isLoading: false, errorMessage: failure.message),
           ),
           (messages) {
-            // Messages come in reverse order (newest first), reverse for UI
-            final reversedMessages = messages.reversed.toList();
             emit(
               state.copyWith(
                 isLoading: false,
-                messages: reversedMessages,
+                messages: messages,
                 hasMore: messages.length >= 20,
                 cursor: messages.isNotEmpty ? messages.last.id : null,
               ),
@@ -85,9 +83,8 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
             if (messages.isEmpty) {
               emit(state.copyWith(isLoadingMore: false, hasMore: false));
             } else {
-              // Prepend older messages to the beginning
-              final reversedMessages = messages.reversed.toList();
-              final updatedMessages = [...reversedMessages, ...state.messages];
+              // Append older messages to the end (since list is Newest -> Oldest)
+              final updatedMessages = [...state.messages, ...messages];
               emit(
                 state.copyWith(
                   isLoadingMore: false,
@@ -116,7 +113,7 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
           ),
           (message) {
             // Add optimistic message to UI
-            final updatedMessages = [...state.messages, message];
+            final updatedMessages = [message, ...state.messages];
             emit(state.copyWith(isSending: false, messages: updatedMessages));
           },
         );
@@ -136,7 +133,7 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
           emit(state.copyWith(messages: updatedMessages));
         } else {
           // Add new message
-          final updatedMessages = <Message>[...state.messages, message];
+          final updatedMessages = <Message>[message, ...state.messages];
           emit(state.copyWith(messages: updatedMessages));
         }
       },
