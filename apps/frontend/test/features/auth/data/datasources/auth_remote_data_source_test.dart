@@ -139,14 +139,24 @@ void main() {
       () async {
         // Arrange
         // 1. Mock verify call
+        final verifyResponse = MockResponse();
+        when(() => verifyResponse.data).thenReturn({});
         when(
           () => mockDio.post('/auth/verify-email', data: any(named: 'data')),
-        ).thenAnswer((_) async => MockResponse());
+        ).thenAnswer((_) async => verifyResponse);
 
         // 2. Mock getProfile call
         final profileResponse = MockResponse();
         when(() => profileResponse.data).thenReturn(tUserModel.toJson());
         when(() => mockDio.get('/me')).thenAnswer((_) async => profileResponse);
+
+        // 3. Mock token storage
+        when(
+          () => mockStorage.write(
+            key: any(named: 'key'),
+            value: any(named: 'value'),
+          ),
+        ).thenAnswer((_) async {});
 
         // Act
         final result = await dataSource.verifyEmail(tEmail, tOtp);

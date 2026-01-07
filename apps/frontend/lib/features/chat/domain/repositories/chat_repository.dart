@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import '../entities/conversation.dart';
 import '../entities/message.dart';
@@ -40,6 +41,12 @@ abstract class IChatRepository {
     required String content,
   });
 
+  /// Send an image message
+  Future<Either<Failure, Message>> sendImage({
+    required String conversationId,
+    required File file,
+  });
+
   /// Listen to new messages in real-time via WebSocket
   ///
   /// Returns a Stream of Either<Failure, Message>
@@ -65,7 +72,32 @@ abstract class IChatRepository {
 
   /// Get WebSocket connection state stream
   Stream<WebSocketState> get connectionState;
+
+  /// Emit typing event to a conversation
+  ///
+  /// [conversationId] - ID of the conversation
+  Future<Either<Failure, void>> emitTyping(String conversationId);
+
+  /// Listen to typing events in real-time via WebSocket
+  ///
+  /// Returns a Stream of typing events with userId and userName
+  Stream<TypingEvent> listenToTyping();
 }
 
 /// WebSocket connection state
 enum WebSocketState { disconnected, connecting, connected, error }
+
+/// Typing event from WebSocket
+class TypingEvent {
+  final String conversationId;
+  final String userId;
+  final String userName;
+  final bool isTyping;
+
+  TypingEvent({
+    required this.conversationId,
+    required this.userId,
+    required this.userName,
+    required this.isTyping,
+  });
+}

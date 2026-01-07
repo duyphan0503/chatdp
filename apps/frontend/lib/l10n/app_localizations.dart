@@ -481,6 +481,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Logout'**
   String get logout;
+
+  /// No description provided for @typeAMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get typeAMessage;
+
+  /// No description provided for @failedToLoadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load image'**
+  String get failedToLoadImage;
+
+  /// No description provided for @imageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image unavailable'**
+  String get imageUnavailable;
+
+  /// No description provided for @unsupportedMessageType.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported message type'**
+  String get unsupportedMessageType;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noMessagesYet;
+
+  /// No description provided for @online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get online;
+
+  /// No description provided for @offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offline;
+
+  /// No description provided for @sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get sending;
+
+  /// No description provided for @sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sent;
+
+  /// No description provided for @delivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get delivered;
+
+  /// No description provided for @read.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get read;
+
+  /// No description provided for @failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failed;
+
+  /// No description provided for @errorConnectionTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection timeout'**
+  String get errorConnectionTimeout;
+
+  /// No description provided for @errorNoInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get errorNoInternet;
+
+  /// No description provided for @errorAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed'**
+  String get errorAuthFailed;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error occurred'**
+  String get errorServer;
+
+  /// No description provided for @errorRequestCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Request cancelled'**
+  String get errorRequestCancelled;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error occurred'**
+  String get errorUnknown;
+
+  /// No description provided for @errorConvIdEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation ID cannot be empty'**
+  String get errorConvIdEmpty;
+
+  /// No description provided for @errorImageFileNotExist.
+  ///
+  /// In en, this message translates to:
+  /// **'Image file does not exist'**
+  String get errorImageFileNotExist;
+
+  /// No description provided for @errorInvalidImageFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid image file format'**
+  String get errorInvalidImageFormat;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chat;
 }
 
 class _AppLocalizationsDelegate

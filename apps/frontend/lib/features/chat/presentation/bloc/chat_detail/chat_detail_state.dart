@@ -30,5 +30,11 @@ abstract class ChatDetailState with _$ChatDetailState {
 
     /// Sending state
     @Default(false) bool isSending,
+
+    /// List of users currently typing (user IDs)
+    @Default([]) List<String> typingUserIds,
+
+    /// Map of user ID to display name for typing users
+    @Default({}) Map<String, String> typingUsers,
   }) = _ChatDetailState;
 }

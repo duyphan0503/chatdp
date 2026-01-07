@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
@@ -11,6 +12,7 @@ import '../datasources/chat_remote_data_source.dart';
 import '../datasources/chat_websocket_data_source.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
+import '../../../../core/constants/error_keys.dart';
 
 /// Implementation of IChatRepository.
 ///
@@ -121,6 +123,49 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   @override
+  Future<Either<Failure, Message>> sendImage({
+    required String conversationId,
+    required File file,
+  }) async {
+    try {
+      // 1. Upload file first
+      final imageUrl = await _remoteDataSource.uploadFile(file);
+
+      // 2. Send message with image URL
+      // Use WebSocket to send message (will be optimistic)
+      await _webSocketDataSource.sendMessage(
+        conversationId: conversationId,
+        content: imageUrl,
+        contentType: 'image',
+      );
+
+      // Create optimistic message for immediate UI feedback
+      final currentUserId = await _getCurrentUserId();
+      final currentUser = await _getCurrentUser();
+
+      final optimisticMessage = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        conversationId: conversationId,
+        senderId: currentUserId,
+        senderName: currentUser['displayName'] ?? 'You',
+        senderAvatarUrl: currentUser['avatarUrl'],
+        contentType: MessageContentType.image,
+        content: imageUrl,
+        createdAt: DateTime.now(),
+        isMine: true,
+        status: MessageStatus.sending,
+      );
+
+      return Right(optimisticMessage);
+    } catch (e) {
+      if (e is DioException) {
+        return Left(_handleDioException(e));
+      }
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Stream<Either<Failure, Message>> listenToMessages() async* {
     try {
       final currentUserId = await _getCurrentUserId();
@@ -184,6 +229,21 @@ class ChatRepositoryImpl implements IChatRepository {
     });
   }
 
+  @override
+  Future<Either<Failure, void>> emitTyping(String conversationId) async {
+    try {
+      await _webSocketDataSource.emitTyping(conversationId);
+      return const Right(null);
+    } catch (e) {
+      return Left(WebSocketFailure(e.toString()));
+    }
+  }
+
+  @override
+  Stream<TypingEvent> listenToTyping() {
+    return _webSocketDataSource.typingStream;
+  }
+
   /// Get current user ID from local storage
   Future<String> _getCurrentUserId() async {
     return await _storage.read(key: 'userId') ?? '';
@@ -208,25 +268,23 @@ class ChatRepositoryImpl implements IChatRepository {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const NetworkFailure('Connection timeout');
+        return const NetworkFailure(ErrorKeys.connectionTimeout);
 
       case DioExceptionType.connectionError:
-        return const NetworkFailure('No internet connection');
+        return const NetworkFailure(ErrorKeys.noInternet);
 
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
         if (statusCode == 401 || statusCode == 403) {
-          return const AuthFailure('Authentication failed');
+          return const AuthFailure(ErrorKeys.authFailed);
         }
-        return ServerFailure(
-          e.response?.data?['message'] ?? 'Server error occurred',
-        );
+        return ServerFailure(e.response?.data?['message'] ?? ErrorKeys.server);
 
       case DioExceptionType.cancel:
-        return const UnknownFailure('Request cancelled');
+        return const UnknownFailure(ErrorKeys.requestCancelled);
 
       default:
-        return UnknownFailure(e.message ?? 'Unknown error occurred');
+        return UnknownFailure(e.message ?? ErrorKeys.unknown);
     }
   }
 }

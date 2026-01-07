@@ -5,6 +5,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+import java.util.Properties
+import java.io.FileInputStream
 
 android {
     namespace = "com.duyphandz.chatdp"
@@ -31,7 +33,7 @@ android {
         versionName = flutter.versionName
     }
 
-    val keystoreProperties = java.util.Properties()
+    val keystoreProperties = Properties()
     val keystorePropertiesFile = rootProject.file("key.properties")
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(keystorePropertiesFile.inputStream())

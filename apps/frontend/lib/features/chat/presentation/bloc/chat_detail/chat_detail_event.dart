@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:io';
 import '../../../domain/entities/message.dart';
 
 part 'chat_detail_event.freezed.dart';
@@ -26,4 +27,23 @@ class ChatDetailEvent with _$ChatDetailEvent {
 
   /// Leave conversation room (WebSocket)
   const factory ChatDetailEvent.leaveConversation() = _LeaveConversation;
+
+  /// Send an image message
+  const factory ChatDetailEvent.sendImage({required File image}) = _SendImage;
+
+  /// User started typing
+  const factory ChatDetailEvent.startTyping() = _StartTyping;
+
+  /// User stopped typing
+  const factory ChatDetailEvent.stopTyping() = _StopTyping;
+
+  /// Another user started typing
+  const factory ChatDetailEvent.userTypingReceived({
+    required String userId,
+    required String userName,
+  }) = _UserTypingReceived;
+
+  /// Another user stopped typing
+  const factory ChatDetailEvent.userStoppedTyping({required String userId}) =
+      _UserStoppedTyping;
 }

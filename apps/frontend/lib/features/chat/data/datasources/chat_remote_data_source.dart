@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:injectable/injectable.dart';
+import 'package:mime/mime.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 
@@ -22,6 +25,9 @@ abstract class IChatRemoteDataSource {
     required String conversationId,
     required String content,
   });
+
+  /// Upload a file (image/video/doc)
+  Future<String> uploadFile(File file);
 }
 
 @LazySingleton(as: IChatRemoteDataSource)
@@ -110,6 +116,40 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
           response: response,
           type: DioExceptionType.badResponse,
           message: 'Failed to send message',
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String> uploadFile(File file) async {
+    try {
+      final fileName = file.path.split('/').last;
+      final mimeType = lookupMimeType(file.path);
+
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+        ),
+      });
+
+      final response = await _dio.post(
+        '/uploads', // Assuming generic upload endpoint
+        data: formData,
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return response.data['url'] as String;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          message: 'Failed to upload file',
         );
       }
     } catch (e) {
