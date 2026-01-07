@@ -210,4 +210,73 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get logout => 'Đăng xuất';
+
+  @override
+  String get typeAMessage => 'Nhập tin nhắn...';
+
+  @override
+  String get failedToLoadImage => 'Không thể tải ảnh';
+
+  @override
+  String get imageUnavailable => 'Ảnh không khả dụng';
+
+  @override
+  String get unsupportedMessageType => 'Loại tin nhắn không được hỗ trợ';
+
+  @override
+  String get noMessagesYet => 'Chưa có tin nhắn nào';
+
+  @override
+  String get online => 'Trực tuyến';
+
+  @override
+  String get offline => 'Ngoại tuyến';
+
+  @override
+  String get sending => 'Đang gửi';
+
+  @override
+  String get sent => 'Đã gửi';
+
+  @override
+  String get delivered => 'Đã nhận';
+
+  @override
+  String get read => 'Đã đọc';
+
+  @override
+  String get failed => 'Thất bại';
+
+  @override
+  String get errorConnectionTimeout => 'Hết thời gian kết nối';
+
+  @override
+  String get errorNoInternet => 'Không có kết nối internet';
+
+  @override
+  String get errorAuthFailed => 'Xác thực thất bại';
+
+  @override
+  String get errorServer => 'Lỗi máy chủ';
+
+  @override
+  String get errorRequestCancelled => 'Yêu cầu bị hủy';
+
+  @override
+  String get errorUnknown => 'Lỗi không xác định';
+
+  @override
+  String get errorConvIdEmpty => 'ID cuộc trò chuyện không được để trống';
+
+  @override
+  String get errorImageFileNotExist => 'Tệp ảnh không tồn tại';
+
+  @override
+  String get errorInvalidImageFormat => 'Định dạng tệp ảnh không hợp lệ';
+
+  @override
+  String get retry => 'Thử lại';
+
+  @override
+  String get chat => 'Trò chuyện';
 }

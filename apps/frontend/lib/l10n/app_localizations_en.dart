@@ -209,4 +209,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logout => 'Logout';
+
+  @override
+  String get typeAMessage => 'Type a message...';
+
+  @override
+  String get failedToLoadImage => 'Failed to load image';
+
+  @override
+  String get imageUnavailable => 'Image unavailable';
+
+  @override
+  String get unsupportedMessageType => 'Unsupported message type';
+
+  @override
+  String get noMessagesYet => 'No messages yet';
+
+  @override
+  String get online => 'Online';
+
+  @override
+  String get offline => 'Offline';
+
+  @override
+  String get sending => 'Sending';
+
+  @override
+  String get sent => 'Sent';
+
+  @override
+  String get delivered => 'Delivered';
+
+  @override
+  String get read => 'Read';
+
+  @override
+  String get failed => 'Failed';
+
+  @override
+  String get errorConnectionTimeout => 'Connection timeout';
+
+  @override
+  String get errorNoInternet => 'No internet connection';
+
+  @override
+  String get errorAuthFailed => 'Authentication failed';
+
+  @override
+  String get errorServer => 'Server error occurred';
+
+  @override
+  String get errorRequestCancelled => 'Request cancelled';
+
+  @override
+  String get errorUnknown => 'Unknown error occurred';
+
+  @override
+  String get errorConvIdEmpty => 'Conversation ID cannot be empty';
+
+  @override
+  String get errorImageFileNotExist => 'Image file does not exist';
+
+  @override
+  String get errorInvalidImageFormat => 'Invalid image file format';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get chat => 'Chat';
 }

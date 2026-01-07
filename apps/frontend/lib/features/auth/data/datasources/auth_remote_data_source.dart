@@ -36,7 +36,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     await _storage.write(key: 'refreshToken', value: refreshToken);
 
     if (response.data['user'] != null) {
-      return UserModel.fromJson(response.data['user']);
+      final user = UserModel.fromJson(response.data['user']);
+      await _saveUserInfo(user);
+      return user;
     } else {
       final profile = await getProfile();
       if (profile != null) {
@@ -50,7 +52,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel?> getProfile() async {
     try {
       final response = await _dio.get('/me');
-      return UserModel.fromJson(response.data);
+      final user = UserModel.fromJson(response.data);
+      await _saveUserInfo(user);
+      return user;
     } catch (e) {
       // The method implicitly returns null if an error occurs
       AppLogger.error('Failed to get profile', e);
@@ -76,7 +80,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       AppLogger.info('Registration successful for: $email');
 
       if (response.data['user'] != null) {
-        return UserModel.fromJson(response.data['user']);
+        final user = UserModel.fromJson(response.data['user']);
+        await _saveUserInfo(user);
+        return user;
       } else {
         final profile = await getProfile();
         if (profile != null) {
@@ -168,7 +174,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await _storage.write(key: 'refreshToken', value: refreshToken);
 
       if (response.data['user'] != null) {
-        return UserModel.fromJson(response.data['user']);
+        final user = UserModel.fromJson(response.data['user']);
+        await _saveUserInfo(user);
+        return user;
       } else {
         final profile = await getProfile();
         if (profile != null) {
@@ -181,6 +189,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       AppLogger.error('Google login failed', e);
       rethrow;
+    }
+  }
+
+  Future<void> _saveUserInfo(UserModel user) async {
+    await _storage.write(key: 'userId', value: user.id);
+    await _storage.write(key: 'displayName', value: user.displayName);
+    if (user.avatarUrl != null) {
+      await _storage.write(key: 'avatarUrl', value: user.avatarUrl);
     }
   }
 }

@@ -21,6 +21,24 @@ import '../../features/auth/data/repositories/auth_repository_impl.dart'
     as _i153;
 import '../../features/auth/domain/repositories/auth_repository.dart' as _i787;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
+import '../../features/chat/data/datasources/chat_remote_data_source.dart'
+    as _i980;
+import '../../features/chat/data/datasources/chat_websocket_data_source.dart'
+    as _i527;
+import '../../features/chat/data/repositories/chat_repository_impl.dart'
+    as _i504;
+import '../../features/chat/domain/repositories/chat_repository.dart' as _i420;
+import '../../features/chat/domain/usecases/get_conversations_usecase.dart'
+    as _i194;
+import '../../features/chat/domain/usecases/get_messages_usecase.dart' as _i325;
+import '../../features/chat/domain/usecases/listen_to_messages_usecase.dart'
+    as _i952;
+import '../../features/chat/domain/usecases/send_image_usecase.dart' as _i253;
+import '../../features/chat/domain/usecases/send_message_usecase.dart' as _i795;
+import '../../features/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart'
+    as _i822;
+import '../../features/chat/presentation/bloc/conversation_list/conversation_list_cubit.dart'
+    as _i108;
 import '../../features/settings/data/datasources/settings_local_data_source.dart'
     as _i599;
 import '../../features/settings/data/repositories/settings_repository_impl.dart'
@@ -54,6 +72,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i908.AuthInterceptor>(
       () => _i908.AuthInterceptor(gh<_i558.FlutterSecureStorage>()),
     );
+    gh.lazySingleton<_i527.IChatWebSocketDataSource>(
+      () => _i527.ChatWebSocketDataSource(gh<_i558.FlutterSecureStorage>()),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i674.SettingsRepository>(
       () => _i955.SettingsRepositoryImpl(gh<_i599.SettingsLocalDataSource>()),
     );
@@ -78,8 +100,46 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i558.FlutterSecureStorage>(),
       ),
     );
+    gh.lazySingleton<_i980.IChatRemoteDataSource>(
+      () => _i980.ChatRemoteDataSource(gh<_i361.Dio>()),
+    );
     gh.factory<_i797.AuthBloc>(
       () => _i797.AuthBloc(gh<_i787.AuthRepository>()),
+    );
+    gh.lazySingleton<_i420.IChatRepository>(
+      () => _i504.ChatRepositoryImpl(
+        gh<_i980.IChatRemoteDataSource>(),
+        gh<_i527.IChatWebSocketDataSource>(),
+        gh<_i558.FlutterSecureStorage>(),
+      ),
+    );
+    gh.factory<_i194.GetConversationsUseCase>(
+      () => _i194.GetConversationsUseCase(gh<_i420.IChatRepository>()),
+    );
+    gh.factory<_i325.GetMessagesUseCase>(
+      () => _i325.GetMessagesUseCase(gh<_i420.IChatRepository>()),
+    );
+    gh.factory<_i952.ListenToMessagesUseCase>(
+      () => _i952.ListenToMessagesUseCase(gh<_i420.IChatRepository>()),
+    );
+    gh.factory<_i253.SendImageUseCase>(
+      () => _i253.SendImageUseCase(gh<_i420.IChatRepository>()),
+    );
+    gh.factory<_i795.SendMessageUseCase>(
+      () => _i795.SendMessageUseCase(gh<_i420.IChatRepository>()),
+    );
+    gh.factoryParam<_i822.ChatDetailBloc, String, dynamic>(
+      (conversationId, _) => _i822.ChatDetailBloc(
+        gh<_i325.GetMessagesUseCase>(),
+        gh<_i795.SendMessageUseCase>(),
+        gh<_i253.SendImageUseCase>(),
+        gh<_i952.ListenToMessagesUseCase>(),
+        gh<_i420.IChatRepository>(),
+        conversationId,
+      ),
+    );
+    gh.factory<_i108.ConversationListCubit>(
+      () => _i108.ConversationListCubit(gh<_i194.GetConversationsUseCase>()),
     );
     return this;
   }
