@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -24,7 +25,7 @@ class ChatListPage extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.add_comment_outlined),
               onPressed: () {
-                // TODO: Implement new chat
+                context.pushNamed('newChat');
               },
             ),
           ],

@@ -47,6 +47,9 @@ abstract class IChatRepository {
     required File file,
   });
 
+  /// Create a new one-to-one conversation
+  Future<Either<Failure, Conversation>> createConversation(String userId);
+
   /// Listen to new messages in real-time via WebSocket
   ///
   /// Returns a `Stream<Either<Failure, Message>>`

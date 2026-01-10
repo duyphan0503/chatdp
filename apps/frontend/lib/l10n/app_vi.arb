@@ -86,5 +86,9 @@
   "errorImageFileNotExist": "Tệp ảnh không tồn tại",
   "errorInvalidImageFormat": "Định dạng tệp ảnh không hợp lệ",
   "retry": "Thử lại",
-  "chat": "Trò chuyện"
+  "chat": "Trò chuyện",
+  "newChat": "Cuộc hội thoại mới",
+  "search": "Tìm kiếm",
+  "noResults": "Không tìm thấy kết quả",
+  "startTypingToSearch": "Nhập để tìm kiếm"
 }

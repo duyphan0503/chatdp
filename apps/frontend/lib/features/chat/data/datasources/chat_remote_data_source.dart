@@ -28,6 +28,9 @@ abstract class IChatRemoteDataSource {
 
   /// Upload a file (image/video/doc)
   Future<String> uploadFile(File file);
+
+  /// Create a conversation (one-to-one)
+  Future<ConversationModel> createConversation(String userId);
 }
 
 @LazySingleton(as: IChatRemoteDataSource)
@@ -152,6 +155,23 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
           message: 'Failed to upload file',
         );
       }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ConversationModel> createConversation(String userId) async {
+    try {
+      final response = await _dio.post(
+        '/conversations',
+        data: {
+          'type': 'private',
+          'participantUserIds': [userId],
+        },
+      );
+
+      return ConversationModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
     }

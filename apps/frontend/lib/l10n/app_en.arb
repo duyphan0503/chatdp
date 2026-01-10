@@ -86,5 +86,9 @@
   "errorImageFileNotExist": "Image file does not exist",
   "errorInvalidImageFormat": "Invalid image file format",
   "retry": "Retry",
-  "chat": "Chat"
+  "chat": "Chat",
+  "newChat": "New Chat",
+  "search": "Search",
+  "noResults": "No results found",
+  "startTypingToSearch": "Start typing to search"
 }

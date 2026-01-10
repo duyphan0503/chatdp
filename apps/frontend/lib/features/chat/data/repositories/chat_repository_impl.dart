@@ -166,6 +166,20 @@ class ChatRepositoryImpl implements IChatRepository {
   }
 
   @override
+  Future<Either<Failure, Conversation>> createConversation(
+    String userId,
+  ) async {
+    try {
+      final model = await _remoteDataSource.createConversation(userId);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioException(e));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Stream<Either<Failure, Message>> listenToMessages() async* {
     try {
       final currentUserId = await _getCurrentUserId();
