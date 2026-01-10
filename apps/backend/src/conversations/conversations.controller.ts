@@ -16,9 +16,17 @@ import { ConversationUpdateDto } from './dto/conversation-update.dto.js';
 import { GroupMemberAddDto } from './dto/group-member.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import type { Request } from 'express';
-// API response intentionally omits participant list to keep the public schema minimal.
-// Internal service still returns participants for authorization and business logic; the
-// controller maps them out before sending the response to clients.
+import { PrismaService } from '../prisma/prisma.service.js';
+
+// Participant info for API response
+interface ParticipantResponse {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: 'admin' | 'member';
+}
+
+// API response now includes participants for the client to display names
 interface ConversationResponse {
   id: string;
   type: 'private' | 'group';
@@ -26,11 +34,43 @@ interface ConversationResponse {
   groupAvatarUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
+  participants: ParticipantResponse[];
 }
 
-function mapConversation(c: ConversationWithParticipants): ConversationResponse {
-  const { id, type, groupName, groupAvatarUrl, createdAt, updatedAt } = c;
-  return { id, type, groupName, groupAvatarUrl, createdAt, updatedAt };
+async function mapConversation(
+  c: ConversationWithParticipants,
+  prisma: PrismaService,
+): Promise<ConversationResponse> {
+  const { id, type, groupName, groupAvatarUrl, createdAt, updatedAt, participants } = c;
+
+  // Fetch user info for all participants
+  const userIds = participants.map((p) => p.userId);
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, displayName: true, avatarUrl: true },
+  });
+
+  const userMap = new Map(users.map((u) => [u.id, u]));
+
+  const participantResponses: ParticipantResponse[] = participants.map((p) => {
+    const user = userMap.get(p.userId);
+    return {
+      userId: p.userId,
+      displayName: user?.displayName ?? 'Unknown',
+      avatarUrl: user?.avatarUrl ?? null,
+      role: p.role,
+    };
+  });
+
+  return {
+    id,
+    type,
+    groupName,
+    groupAvatarUrl,
+    createdAt,
+    updatedAt,
+    participants: participantResponses,
+  };
 }
 
 /**
@@ -42,7 +82,10 @@ function mapConversation(c: ConversationWithParticipants): ConversationResponse 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard)
 export class ConversationsController {
-  constructor(private readonly conversations: ConversationsService) {}
+  constructor(
+    private readonly conversations: ConversationsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * Creates a new conversation for the authenticated user.
@@ -57,7 +100,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.create(userId, dto);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -68,7 +111,7 @@ export class ConversationsController {
   async list(@Req() req: Request): Promise<ConversationResponse[]> {
     const { userId } = req.user as { userId: string };
     const convs = await this.conversations.listForUser(userId);
-    return convs.map(mapConversation);
+    return Promise.all(convs.map((c) => mapConversation(c, this.prisma)));
   }
 
   /**
@@ -81,7 +124,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.findById(id, userId);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -95,7 +138,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.join(id, userId);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -110,7 +153,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.update(id, userId, dto);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -125,7 +168,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.addMember(id, userId, dto.userId);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -140,7 +183,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.removeMember(id, userId, memberId);
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -154,7 +197,7 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.setMemberRole(id, userId, memberId, 'admin');
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 
   /**
@@ -169,6 +212,6 @@ export class ConversationsController {
   ): Promise<ConversationResponse> {
     const { userId } = req.user as { userId: string };
     const conv = await this.conversations.setMemberRole(id, userId, memberId, 'member');
-    return mapConversation(conv);
+    return mapConversation(conv, this.prisma);
   }
 }

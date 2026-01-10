@@ -1,13 +1,36 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import 'package:intl/intl.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class ChatBubble extends StatelessWidget {
   final Message message;
+  final Map<String, ConversationParticipant> participantsMap;
 
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({
+    super.key,
+    required this.message,
+    this.participantsMap = const {},
+  });
+
+  /// Resolve sender name from participantsMap if message.senderName is empty
+  String get _resolvedSenderName {
+    if (message.senderName.isNotEmpty) {
+      return message.senderName;
+    }
+    final participant = participantsMap[message.senderId];
+    return participant?.displayName ?? 'Unknown';
+  }
+
+  /// Resolve sender avatar URL from participantsMap if message doesn't have one
+  String? get _resolvedAvatarUrl {
+    if (message.senderAvatarUrl != null) {
+      return message.senderAvatarUrl;
+    }
+    return participantsMap[message.senderId]?.avatarUrl;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +57,7 @@ class ChatBubble extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 12, bottom: 4),
                     child: Text(
-                      message.senderName,
+                      _resolvedSenderName,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -94,15 +117,20 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    if (message.senderAvatarUrl != null) {
+    final avatarUrl = _resolvedAvatarUrl;
+    final senderName = _resolvedSenderName;
+
+    if (avatarUrl != null) {
       return CircleAvatar(
         radius: 16,
-        backgroundImage: CachedNetworkImageProvider(message.senderAvatarUrl!),
+        backgroundImage: CachedNetworkImageProvider(avatarUrl),
       );
     }
     return CircleAvatar(
       radius: 16,
-      child: Text(message.senderName.substring(0, 1).toUpperCase()),
+      child: Text(
+        senderName.isNotEmpty ? senderName.substring(0, 1).toUpperCase() : '?',
+      ),
     );
   }
 

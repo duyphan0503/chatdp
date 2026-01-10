@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../chat/presentation/bloc/create_conversation/create_conversation_cubit.dart';
+import '../../../chat/presentation/bloc/conversation_list/conversation_list_cubit.dart';
 import '../bloc/contact_search_bloc.dart';
 
 class NewChatPage extends StatelessWidget {
@@ -32,6 +33,8 @@ class _NewChatView extends StatefulWidget {
 
 class _NewChatViewState extends State<_NewChatView> {
   final _searchController = TextEditingController();
+  String? _selectedDisplayName;
+  String? _selectedAvatarUrl;
 
   @override
   void dispose() {
@@ -50,10 +53,21 @@ class _NewChatViewState extends State<_NewChatView> {
     return BlocListener<CreateConversationCubit, CreateConversationState>(
       listener: (context, state) {
         if (state is CreateConversationSuccess) {
+          // Refresh conversation list so it's ready when we go back
+          GetIt.I<ConversationListCubit>().refreshConversations();
+
           context.pushReplacementNamed(
             'chatDetail',
             pathParameters: {'id': state.conversation.id},
-            extra: {'title': state.conversation.groupName ?? 'Chat'},
+            extra: {
+              'title':
+                  state.conversation.groupName ??
+                  _selectedDisplayName ??
+                  'Chat',
+              'avatarUrl':
+                  state.conversation.groupAvatarUrl ?? _selectedAvatarUrl,
+              'participants': state.conversation.participants,
+            },
           );
         } else if (state is CreateConversationError) {
           ScaffoldMessenger.of(
@@ -92,7 +106,7 @@ class _NewChatViewState extends State<_NewChatView> {
                     }
                     return ListView.separated(
                       itemCount: state.users.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final user = state.users[index];
                         return ListTile(
@@ -113,6 +127,10 @@ class _NewChatViewState extends State<_NewChatView> {
                               ? Text(user.email!)
                               : null,
                           onTap: () {
+                            setState(() {
+                              _selectedDisplayName = user.displayName;
+                              _selectedAvatarUrl = user.avatarUrl;
+                            });
                             context.read<CreateConversationCubit>().createChat(
                               user.id,
                             );

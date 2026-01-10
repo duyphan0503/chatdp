@@ -11,12 +11,16 @@ _MessageModel _$MessageModelFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       conversationId: json['conversationId'] as String,
       senderId: json['senderId'] as String,
-      senderName: json['senderName'] as String,
+      senderName: json['senderName'] as String? ?? '',
       senderAvatarUrl: json['senderAvatarUrl'] as String?,
       contentType: json['contentType'] as String,
       content: json['content'] as String,
       mediaUrl: json['mediaUrl'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      replyToMessageId: json['replyToMessageId'] as String?,
+      deletedAt: json['deletedAt'] == null
+          ? null
+          : DateTime.parse(json['deletedAt'] as String),
     );
 
 Map<String, dynamic> _$MessageModelToJson(_MessageModel instance) =>
@@ -30,4 +34,6 @@ Map<String, dynamic> _$MessageModelToJson(_MessageModel instance) =>
       'content': instance.content,
       'mediaUrl': instance.mediaUrl,
       'createdAt': instance.createdAt.toIso8601String(),
+      'replyToMessageId': instance.replyToMessageId,
+      'deletedAt': instance.deletedAt?.toIso8601String(),
     };

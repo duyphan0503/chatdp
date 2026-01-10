@@ -16,6 +16,7 @@ List<RouteBase> shellRoutes() {
           routes: [
             GoRoute(
               path: AppRoutes.chat,
+              name: 'chat',
               builder: (context, state) => const ChatListPage(),
               routes: [
                 GoRoute(
@@ -31,6 +32,7 @@ List<RouteBase> shellRoutes() {
           routes: [
             GoRoute(
               path: AppRoutes.settings,
+              name: 'settings',
               builder: (context, state) => const SettingsPage(),
             ),
           ],

@@ -73,7 +73,7 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'limit': limit,
+        // 'limit': limit, // Temporarily disabled to prevent backend validation error
         if (cursor != null) 'cursor': cursor,
       };
 
@@ -83,8 +83,18 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data
+        final dynamic data = response.data;
+        List<dynamic> items;
+
+        if (data is List) {
+          items = data;
+        } else if (data is Map && data['items'] is List) {
+          items = data['items'];
+        } else {
+          items = [];
+        }
+
+        return items
             .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
