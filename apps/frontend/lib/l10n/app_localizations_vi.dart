@@ -279,4 +279,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chat => 'Trò chuyện';
+
+  @override
+  String get newChat => 'Cuộc hội thoại mới';
+
+  @override
+  String get search => 'Tìm kiếm';
+
+  @override
+  String get noResults => 'Không tìm thấy kết quả';
+
+  @override
+  String get startTypingToSearch => 'Nhập để tìm kiếm';
 }

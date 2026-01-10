@@ -8,11 +8,13 @@ import '../../domain/entities/conversation.dart';
 class ConversationItem extends StatelessWidget {
   final Conversation conversation;
   final String currentUserId;
+  final VoidCallback? onTap;
 
   const ConversationItem({
     super.key,
     required this.conversation,
     required this.currentUserId,
+    this.onTap,
   });
 
   @override
@@ -108,13 +110,19 @@ class ConversationItem extends StatelessWidget {
             ),
         ],
       ),
-      onTap: () {
-        context.pushNamed(
-          'chatDetail',
-          pathParameters: {'id': conversation.id},
-          extra: {'title': name, 'avatarUrl': avatarUrl},
-        );
-      },
+      onTap:
+          onTap ??
+          () {
+            context.pushNamed(
+              'chatDetail',
+              pathParameters: {'id': conversation.id},
+              extra: {
+                'title': name,
+                'avatarUrl': avatarUrl,
+                'participants': conversation.participants,
+              },
+            );
+          },
     );
   }
 
@@ -125,6 +133,11 @@ class ConversationItem extends StatelessWidget {
         groupName: conversation.groupName,
         groupAvatar: conversation.groupAvatarUrl,
       );
+    }
+
+    // Check for empty participants to prevent crash
+    if (conversation.participants.isEmpty) {
+      return ParticipantResult(isGroup: false, participant: null);
     }
 
     final other = conversation.participants.firstWhere(

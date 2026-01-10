@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/utils/error_localization.dart';
+import '../../domain/entities/conversation.dart';
 
 import '../bloc/chat_detail/chat_detail_bloc.dart';
 import '../bloc/chat_detail/chat_detail_event.dart';
@@ -15,19 +16,25 @@ class ChatDetailPage extends StatelessWidget {
   final String conversationId;
   final String? title;
   final String? avatarUrl;
+  final List<ConversationParticipant> participants;
 
   const ChatDetailPage({
     super.key,
     required this.conversationId,
     this.title,
     this.avatarUrl,
+    this.participants = const [],
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => GetIt.I<ChatDetailBloc>(param1: conversationId),
-      child: _ChatDetailView(title: title, avatarUrl: avatarUrl),
+      child: _ChatDetailView(
+        title: title,
+        avatarUrl: avatarUrl,
+        participants: participants,
+      ),
     );
   }
 }
@@ -35,8 +42,13 @@ class ChatDetailPage extends StatelessWidget {
 class _ChatDetailView extends StatefulWidget {
   final String? title;
   final String? avatarUrl;
+  final List<ConversationParticipant> participants;
 
-  const _ChatDetailView({this.title, this.avatarUrl});
+  const _ChatDetailView({
+    this.title,
+    this.avatarUrl,
+    this.participants = const [],
+  });
 
   @override
   State<_ChatDetailView> createState() => _ChatDetailViewState();
@@ -49,6 +61,15 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    // Set participants for sender name resolution
+    if (widget.participants.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ChatDetailBloc>().add(
+          ChatDetailEvent.setParticipants(participants: widget.participants),
+        );
+      });
+    }
   }
 
   @override
@@ -218,7 +239,10 @@ class _ChatDetailViewState extends State<_ChatDetailView> {
                       );
                     }
                     final message = state.messages[index];
-                    return ChatBubble(message: message);
+                    return ChatBubble(
+                      message: message,
+                      participantsMap: state.participantsMap,
+                    );
                   },
                 );
               },

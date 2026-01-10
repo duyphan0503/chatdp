@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { UsersService } from './users.service.js';
 
@@ -38,5 +38,24 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
     return { id: user.id, email: user.email } as const;
+  }
+
+  /**
+   * Search users by display name or email.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('users')
+  async searchUsers(
+    @Query('q') q: string,
+  ): Promise<
+    Array<{ id: string; email: string | null; displayName: string; avatarUrl: string | null }>
+  > {
+    const users = await this.users.searchUsers(q);
+    return users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrl,
+    }));
   }
 }

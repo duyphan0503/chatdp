@@ -14,12 +14,14 @@ abstract class MessageModel with _$MessageModel {
     required String id,
     required String conversationId,
     required String senderId,
-    required String senderName,
+    @Default('') String senderName,
     String? senderAvatarUrl,
     required String contentType,
     required String content,
     String? mediaUrl,
     required DateTime createdAt,
+    String? replyToMessageId,
+    DateTime? deletedAt,
   }) = _MessageModel;
 
   factory MessageModel.fromJson(Map<String, dynamic> json) =>

@@ -1,30 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/conversation_list/conversation_list_cubit.dart';
 import '../bloc/conversation_list/conversation_list_state.dart';
 import '../widgets/conversation_item.dart';
+import '../../domain/entities/conversation.dart';
 
-class ChatListPage extends StatelessWidget {
+class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
+
+  @override
+  State<ChatListPage> createState() => _ChatListPageState();
+}
+
+class _ChatListPageState extends State<ChatListPage> {
+  late final ConversationListCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = GetIt.I<ConversationListCubit>()..loadConversations();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return BlocProvider(
-      create: (_) => GetIt.I<ConversationListCubit>()..loadConversations(),
+    return BlocProvider.value(
+      value: _cubit,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.chatListTitle),
           actions: [
             IconButton(
               icon: const Icon(Icons.add_comment_outlined),
-              onPressed: () {
-                // TODO: Implement new chat
+              onPressed: () async {
+                // Navigate and refresh when returning
+                await context.pushNamed('newChat');
+                // Refresh conversations when returning from new chat
+                _cubit.refreshConversations();
               },
             ),
           ],
@@ -46,9 +64,7 @@ class ChatListPage extends StatelessWidget {
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   success: (conversations) => RefreshIndicator(
-                    onRefresh: () => context
-                        .read<ConversationListCubit>()
-                        .refreshConversations(),
+                    onRefresh: () => _cubit.refreshConversations(),
                     child: conversations.isEmpty
                         ? Center(
                             child: Text(
@@ -67,6 +83,34 @@ class ChatListPage extends StatelessWidget {
                               return ConversationItem(
                                 conversation: conversations[index],
                                 currentUserId: currentUserId,
+                                onTap: () async {
+                                  final conversation = conversations[index];
+                                  final participantResult =
+                                      _getOtherParticipant(
+                                        conversation,
+                                        currentUserId,
+                                      );
+                                  final name = _getName(
+                                    participantResult,
+                                    conversation,
+                                  );
+                                  final avatarUrl = _getAvatarUrl(
+                                    participantResult,
+                                    conversation,
+                                  );
+
+                                  await context.pushNamed(
+                                    'chatDetail',
+                                    pathParameters: {'id': conversation.id},
+                                    extra: {
+                                      'title': name,
+                                      'avatarUrl': avatarUrl,
+                                      'participants': conversation.participants,
+                                    },
+                                  );
+                                  // Refresh when returning from chat detail
+                                  _cubit.refreshConversations();
+                                },
                               );
                             },
                           ),
@@ -83,9 +127,7 @@ class ChatListPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         FilledButton(
-                          onPressed: () => context
-                              .read<ConversationListCubit>()
-                              .loadConversations(),
+                          onPressed: () => _cubit.loadConversations(),
                           child: Text(l10n.retry),
                         ),
                       ],
@@ -99,4 +141,59 @@ class ChatListPage extends StatelessWidget {
       ),
     );
   }
+
+  _ParticipantResult _getOtherParticipant(
+    Conversation conversation,
+    String currentUserId,
+  ) {
+    if (conversation.type == ConversationType.group) {
+      return _ParticipantResult(
+        isGroup: true,
+        groupName: conversation.groupName,
+        groupAvatar: conversation.groupAvatarUrl,
+      );
+    }
+
+    if (conversation.participants.isEmpty) {
+      return _ParticipantResult(isGroup: false, participant: null);
+    }
+
+    try {
+      final other = conversation.participants.firstWhere(
+        (p) => p.userId != currentUserId,
+        orElse: () => conversation.participants.first,
+      );
+      return _ParticipantResult(isGroup: false, participant: other);
+    } catch (_) {
+      return _ParticipantResult(isGroup: false, participant: null);
+    }
+  }
+
+  String _getName(_ParticipantResult result, Conversation conversation) {
+    if (result.isGroup) {
+      return result.groupName ?? 'Group Chat';
+    }
+    return result.participant?.displayName ?? 'Unknown';
+  }
+
+  String? _getAvatarUrl(_ParticipantResult result, Conversation conversation) {
+    if (result.isGroup) {
+      return result.groupAvatar;
+    }
+    return result.participant?.avatarUrl;
+  }
+}
+
+class _ParticipantResult {
+  final bool isGroup;
+  final ConversationParticipant? participant;
+  final String? groupName;
+  final String? groupAvatar;
+
+  _ParticipantResult({
+    required this.isGroup,
+    this.participant,
+    this.groupName,
+    this.groupAvatar,
+  });
 }

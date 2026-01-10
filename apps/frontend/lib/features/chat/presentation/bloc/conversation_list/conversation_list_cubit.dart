@@ -6,7 +6,7 @@ import 'conversation_list_state.dart';
 /// Cubit for managing conversation list state.
 ///
 /// Handles fetching conversations and managing UI state.
-@injectable
+@lazySingleton
 class ConversationListCubit extends Cubit<ConversationListState> {
   final GetConversationsUseCase _getConversationsUseCase;
 

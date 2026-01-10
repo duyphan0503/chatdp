@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../../domain/entities/conversation.dart';
 import '../../../domain/entities/message.dart';
 
 part 'chat_detail_state.freezed.dart';
@@ -36,5 +37,8 @@ abstract class ChatDetailState with _$ChatDetailState {
 
     /// Map of user ID to display name for typing users
     @Default({}) Map<String, String> typingUsers,
+
+    /// Map of user ID to participant info for resolving sender names
+    @Default({}) Map<String, ConversationParticipant> participantsMap,
   }) = _ChatDetailState;
 }

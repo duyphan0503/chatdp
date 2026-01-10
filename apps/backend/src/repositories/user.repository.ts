@@ -68,4 +68,16 @@ export class UserRepository {
       data: { passwordHash },
     }) as Promise<UserRecord>;
   }
+
+  async searchUsers(query: string, limit: number = 20): Promise<UserRecord[]> {
+    return this.prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: query, mode: 'insensitive' } },
+          { displayName: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      take: limit,
+    }) as Promise<UserRecord[]>;
+  }
 }

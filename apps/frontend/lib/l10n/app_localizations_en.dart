@@ -278,4 +278,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chat => 'Chat';
+
+  @override
+  String get newChat => 'New Chat';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get noResults => 'No results found';
+
+  @override
+  String get startTypingToSearch => 'Start typing to search';
 }

@@ -22,4 +22,8 @@ export class UsersService {
     }
     return record;
   }
+
+  async searchUsers(query: string): Promise<UserRecord[]> {
+    return this.users.searchUsers(query);
+  }
 }

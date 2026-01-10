@@ -6,6 +6,7 @@ import '../../../domain/usecases/send_message_usecase.dart';
 import '../../../domain/usecases/send_image_usecase.dart';
 import '../../../domain/usecases/listen_to_messages_usecase.dart';
 import '../../../domain/repositories/chat_repository.dart';
+import '../../../domain/entities/conversation.dart';
 import '../../../domain/entities/message.dart';
 import 'chat_detail_event.dart';
 import 'chat_detail_state.dart';
@@ -238,6 +239,14 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
             ),
           );
         }
+      },
+      setParticipants: (e) async {
+        // Build participants map from the list
+        final participantsMap = <String, ConversationParticipant>{};
+        for (final participant in e.participants) {
+          participantsMap[participant.userId] = participant;
+        }
+        emit(state.copyWith(participantsMap: participantsMap));
       },
     );
   }

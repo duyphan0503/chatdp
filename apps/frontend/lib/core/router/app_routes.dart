@@ -5,6 +5,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String chat = '/chat';
   static const String chatDetail = '/chat/:id';
+  static const String newChat = 'new-chat';
   static const String settings = '/settings';
 
   // Auth

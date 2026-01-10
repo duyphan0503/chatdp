@@ -12,18 +12,22 @@ List<RouteBase> authRoutes() {
   return [
     GoRoute(
       path: AppRoutes.splash,
+      name: 'splash',
       builder: (context, state) => const SplashPage(),
     ),
     GoRoute(
       path: AppRoutes.login,
+      name: 'login',
       builder: (context, state) => const LoginPage(),
     ),
     GoRoute(
       path: AppRoutes.register,
+      name: 'register',
       builder: (context, state) => const RegisterPage(),
     ),
     GoRoute(
       path: AppRoutes.otpVerification,
+      name: 'otpVerification',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         final email = extra?['email'] as String? ?? '';
@@ -36,10 +40,12 @@ List<RouteBase> authRoutes() {
     ),
     GoRoute(
       path: AppRoutes.forgotPassword,
+      name: 'forgotPassword',
       builder: (context, state) => const ForgotPasswordPage(),
     ),
     GoRoute(
       path: AppRoutes.resetPassword,
+      name: 'resetPassword',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
         final email = extra['email'] as String;

@@ -28,6 +28,8 @@ import '../../features/chat/data/datasources/chat_websocket_data_source.dart'
 import '../../features/chat/data/repositories/chat_repository_impl.dart'
     as _i504;
 import '../../features/chat/domain/repositories/chat_repository.dart' as _i420;
+import '../../features/chat/domain/usecases/create_conversation_usecase.dart'
+    as _i8;
 import '../../features/chat/domain/usecases/get_conversations_usecase.dart'
     as _i194;
 import '../../features/chat/domain/usecases/get_messages_usecase.dart' as _i325;
@@ -39,6 +41,18 @@ import '../../features/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart'
     as _i822;
 import '../../features/chat/presentation/bloc/conversation_list/conversation_list_cubit.dart'
     as _i108;
+import '../../features/chat/presentation/bloc/create_conversation/create_conversation_cubit.dart'
+    as _i316;
+import '../../features/contact/data/datasources/contact_remote_data_source.dart'
+    as _i913;
+import '../../features/contact/data/repositories/contact_repository_impl.dart'
+    as _i557;
+import '../../features/contact/domain/repositories/contact_repository.dart'
+    as _i430;
+import '../../features/contact/domain/usecases/search_contacts_usecase.dart'
+    as _i268;
+import '../../features/contact/presentation/bloc/contact_search_bloc.dart'
+    as _i1037;
 import '../../features/settings/data/datasources/settings_local_data_source.dart'
     as _i599;
 import '../../features/settings/data/repositories/settings_repository_impl.dart'
@@ -103,8 +117,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i980.IChatRemoteDataSource>(
       () => _i980.ChatRemoteDataSource(gh<_i361.Dio>()),
     );
+    gh.factory<_i913.ContactRemoteDataSource>(
+      () => _i913.ContactRemoteDataSourceImpl(gh<_i361.Dio>()),
+    );
     gh.factory<_i797.AuthBloc>(
       () => _i797.AuthBloc(gh<_i787.AuthRepository>()),
+    );
+    gh.factory<_i430.ContactRepository>(
+      () => _i557.ContactRepositoryImpl(gh<_i913.ContactRemoteDataSource>()),
     );
     gh.lazySingleton<_i420.IChatRepository>(
       () => _i504.ChatRepositoryImpl(
@@ -112,6 +132,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i527.IChatWebSocketDataSource>(),
         gh<_i558.FlutterSecureStorage>(),
       ),
+    );
+    gh.factory<_i268.SearchContactsUseCase>(
+      () => _i268.SearchContactsUseCase(gh<_i430.ContactRepository>()),
+    );
+    gh.factory<_i1037.ContactSearchBloc>(
+      () => _i1037.ContactSearchBloc(gh<_i268.SearchContactsUseCase>()),
+    );
+    gh.factory<_i8.CreateConversationUseCase>(
+      () => _i8.CreateConversationUseCase(gh<_i420.IChatRepository>()),
     );
     gh.factory<_i194.GetConversationsUseCase>(
       () => _i194.GetConversationsUseCase(gh<_i420.IChatRepository>()),
@@ -140,6 +169,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i108.ConversationListCubit>(
       () => _i108.ConversationListCubit(gh<_i194.GetConversationsUseCase>()),
+    );
+    gh.factory<_i316.CreateConversationCubit>(
+      () => _i316.CreateConversationCubit(gh<_i8.CreateConversationUseCase>()),
     );
     return this;
   }

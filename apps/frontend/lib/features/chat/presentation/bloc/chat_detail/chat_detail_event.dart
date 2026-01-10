@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'dart:io';
+import '../../../domain/entities/conversation.dart';
 import '../../../domain/entities/message.dart';
 
 part 'chat_detail_event.freezed.dart';
@@ -46,4 +47,9 @@ class ChatDetailEvent with _$ChatDetailEvent {
   /// Another user stopped typing
   const factory ChatDetailEvent.userStoppedTyping({required String userId}) =
       _UserStoppedTyping;
+
+  /// Set participants for sender name resolution
+  const factory ChatDetailEvent.setParticipants({
+    required List<ConversationParticipant> participants,
+  }) = _SetParticipants;
 }

@@ -28,6 +28,9 @@ abstract class IChatRemoteDataSource {
 
   /// Upload a file (image/video/doc)
   Future<String> uploadFile(File file);
+
+  /// Create a conversation (one-to-one)
+  Future<ConversationModel> createConversation(String userId);
 }
 
 @LazySingleton(as: IChatRemoteDataSource)
@@ -70,7 +73,7 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'limit': limit,
+        // 'limit': limit, // Temporarily disabled to prevent backend validation error
         if (cursor != null) 'cursor': cursor,
       };
 
@@ -80,8 +83,18 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data as List<dynamic>;
-        return data
+        final dynamic data = response.data;
+        List<dynamic> items;
+
+        if (data is List) {
+          items = data;
+        } else if (data is Map && data['items'] is List) {
+          items = data['items'];
+        } else {
+          items = [];
+        }
+
+        return items
             .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
             .toList();
       } else {
@@ -152,6 +165,23 @@ class ChatRemoteDataSource implements IChatRemoteDataSource {
           message: 'Failed to upload file',
         );
       }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ConversationModel> createConversation(String userId) async {
+    try {
+      final response = await _dio.post(
+        '/conversations',
+        data: {
+          'type': 'private',
+          'participantUserIds': [userId],
+        },
+      );
+
+      return ConversationModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
     }

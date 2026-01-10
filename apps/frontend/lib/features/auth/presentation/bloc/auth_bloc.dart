@@ -130,7 +130,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           return 'No internet connection.';
         case DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
-          final serverMessage = error.response?.data['message'];
+          final dynamic data = error.response?.data;
+          final serverMessage = (data is Map) ? data['message'] : null;
 
           if (statusCode == 401) {
             return 'invalidCredentials';

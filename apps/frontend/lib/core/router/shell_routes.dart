@@ -4,6 +4,7 @@ import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/shell/presentation/pages/app_shell_page.dart';
 import 'app_routes.dart';
+import '../../features/contact/presentation/pages/new_chat_page.dart';
 
 List<RouteBase> shellRoutes() {
   return [
@@ -15,7 +16,15 @@ List<RouteBase> shellRoutes() {
           routes: [
             GoRoute(
               path: AppRoutes.chat,
+              name: 'chat',
               builder: (context, state) => const ChatListPage(),
+              routes: [
+                GoRoute(
+                  path: AppRoutes.newChat,
+                  name: 'newChat',
+                  builder: (context, state) => const NewChatPage(),
+                ),
+              ],
             ),
           ],
         ),
@@ -23,6 +32,7 @@ List<RouteBase> shellRoutes() {
           routes: [
             GoRoute(
               path: AppRoutes.settings,
+              name: 'settings',
               builder: (context, state) => const SettingsPage(),
             ),
           ],
